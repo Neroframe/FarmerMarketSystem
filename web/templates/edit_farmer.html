@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Farmer</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 50%; margin: auto; }
+        h1 { color: #333; }
+        form { display: flex; flex-direction: column; }
+        label { margin-top: 10px; }
+        input, select, textarea { padding: 8px; margin-top: 5px; }
+        button { margin-top: 20px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Farmer</h1>
+        <form action="/admin/users/edit-farmer" method="post">
+            <input type="hidden" name="id" value="{{.Farmer.ID}}">
+
+            <!-- First Name -->
+            <label for="first_name">First Name:</label>
+            <input type="text" id="first_name" name="first_name" value="{{.Farmer.FirstName}}" required>
+
+            <!-- Last Name -->
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name" value="{{.Farmer.LastName}}" required>
+
+            <!-- Email -->
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="{{.Farmer.Email}}" required>
+
+            <!-- Farm Name -->
+            <label for="farm_name">Farm Name:</label>
+            <input type="text" id="farm_name" name="farm_name" value="{{.Farmer.FarmName}}">
+
+            <!-- Farm Size -->
+            <label for="farm_size">Farm Size:</label>
+            <input type="text" id="farm_size" name="farm_size" value="{{.Farmer.FarmSize}}">
+
+            <!-- Location -->
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" value="{{.Farmer.Location}}">
+
+            <!-- Status -->
+            <label for="status">Status:</label>
+            <select id="status" name="status">
+                <option value="pending" {{ if eq .Farmer.Status "pending" }}selected{{ end }}>Pending</option>
+                <option value="approved" {{ if eq .Farmer.Status "approved" }}selected{{ end }}>Approved</option>
+                <option value="rejected" {{ if eq .Farmer.Status "rejected" }}selected{{ end }}>Rejected</option>
+            </select>
+
+            <!-- Active Status -->
+            <label for="is_active">Active:</label>
+            <input type="checkbox" id="is_active" name="is_active" {{ if .Farmer.IsActive }}checked{{ end }}>
+
+            <!-- Submit Button -->
+            <button type="submit">Save Changes</button>
+        </form>
+    </div>
+</body>
+</html>

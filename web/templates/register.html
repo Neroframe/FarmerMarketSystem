@@ -1,0 +1,42 @@
+<!-- web/templates/register.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 50%; margin: auto; }
+        form { display: flex; flex-direction: column; }
+        label { margin-top: 10px; }
+        input { padding: 8px; margin-top: 5px; }
+        button { margin-top: 15px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Register</h1>
+        <form action="/register" method="post">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+            <!-- Email -->
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <!-- Password -->
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+            <!-- Confirm Password -->
+            <label for="confirm_password">Confirm Password:</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+
+            <!-- Submit Button -->
+            <button type="submit">Register</button>
+        </form>
+
+        <!-- Link to Login -->
+        <p>Already have an account? <a href="/login">Login here</a>.</p>
+    </div>
+</body>
+</html>
