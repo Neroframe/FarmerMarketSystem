@@ -13,22 +13,9 @@ import (
 	_ "github.com/lib/pq" // Replace with your database driver
 )
 
-// go build -o fms-backend ./backend/cmd
-//
-//	./fms-backend
 func main() {
-	// Set env variables
-	// export DB_HOST=172.17.0.1
-	// export DB_PORT=5432
-	// export DB_USER=postgres
-	// export DB_PASSWORD=123
-	// export DB_NAME=fms_db
-	// Test db connection
-	// psql -h <Windows_Host_IP> -U <your_db_user> -d <your_db_name>
-
-	// Initialize database connection
 	dbConn, err := db.NewPostgresDB(
-		"172.17.0.1", // Host IP:		WIN_IP=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}') echo $WIN_IP
+		"172.17.0.1", // Host IP
 		"5432",       // Port
 		"postgres",   // User
 		"123",        // Password
@@ -59,13 +46,13 @@ func main() {
 	http.Handle("/dashboard", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Dashboard)))
 	http.Handle("/logout", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Logout)))
 
-	// Admin-only farmer routes (require admin authorization)
+	// Dashboard routes (require admin authorization)
 	http.Handle("/pending-farmers", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ListPendingFarmers))))
 	http.Handle("/farmer-profile", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ViewFarmerProfile))))
 	http.Handle("/approve-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ApproveFarmer))))
 	http.Handle("/reject-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.RejectFarmer))))
 
-	// Admin-only user management routes (require admin authorization)
+	// User management routes (require admin authorization)
 	http.Handle("/admin/users", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(adminHandler.ListUsers))))
 	// Routes for farmers
 	http.Handle("/admin/users/toggle-farmer-status", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ToggleFarmerStatus))))
