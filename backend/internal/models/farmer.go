@@ -6,17 +6,18 @@ import (
 )
 
 type Farmer struct {
-	ID        int
-	Email     string
-	FirstName string
-	LastName  string
-	FarmName  string
-	FarmSize  string
-	Location  string
-	Status    string // "pending", "approved", or "rejected"
-	IsActive  bool   // Active or inactive status
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID           int
+	Email        string
+	PasswordHash string
+	FirstName    string
+	LastName     string
+	FarmName     string
+	FarmSize     string
+	Location     string
+	Status       string // "pending", "approved", or "rejected"
+	IsActive     bool   // Active or inactive status
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 func GetPendingFarmers(db *sql.DB) ([]Farmer, error) {
@@ -113,4 +114,27 @@ func UpdateFarmer(db *sql.DB, farmer Farmer) error {
 		farmer.Email, farmer.FirstName, farmer.LastName, farmer.FarmName, farmer.FarmSize, farmer.Location, farmer.Status, farmer.IsActive, time.Now(), farmer.ID,
 	)
 	return err
+}
+
+func CheckFarmerExists(db *sql.DB, email string) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM farmers WHERE email=$1)`
+	err := db.QueryRow(query, email).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func CreateFarmer(db *sql.DB, farmer *Farmer) error {
+	query := `
+		INSERT INTO farmers (email, password_hash, first_name, last_name, farm_name, farm_size, location, status, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		RETURNING id
+	`
+	err := db.QueryRow(query, farmer.Email, farmer.PasswordHash, farmer.FirstName, farmer.LastName, farmer.FarmName, farmer.FarmSize, farmer.Location, "pending", false, time.Now(), time.Now()).Scan(&farmer.ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

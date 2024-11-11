@@ -27,7 +27,7 @@ func main() {
 
 	log.Println("Successfully connected to the database!")
 
-	// Parse templates in 'web/templates' 
+	// Parse templates in 'web/templates'
 	templates, err := parseTemplates("web/templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
@@ -42,17 +42,17 @@ func main() {
 	http.HandleFunc("/register", adminHandler.Register)
 	http.HandleFunc("/login", adminHandler.Login)
 
-	// Protected routes (require authentication)
+	// Protected routes
 	http.Handle("/dashboard", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Dashboard)))
 	http.Handle("/logout", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Logout)))
 
-	// Dashboard routes (require admin authorization)
+	// Dashboard routes 
 	http.Handle("/pending-farmers", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ListPendingFarmers))))
 	http.Handle("/farmer-profile", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ViewFarmerProfile))))
 	http.Handle("/approve-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ApproveFarmer))))
 	http.Handle("/reject-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.RejectFarmer))))
 
-	// User management routes (require admin authorization)
+	// User management routes
 	http.Handle("/admin/users", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(adminHandler.ListUsers))))
 	// Routes for farmers
 	http.Handle("/admin/users/toggle-farmer-status", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ToggleFarmerStatus))))

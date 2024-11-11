@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fms/backend/internal/models"
+	"fms/backend/internal/utils"
 	"html/template"
 	"log"
 	"net/http"
@@ -251,4 +252,103 @@ func (h *FarmerHandler) DeleteFarmer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+}
+
+// farmer-specific funcs
+// router.HandleFunc("/farmer/register", farmerHandler.Register).Methods("GET", "POST")
+func (h *FarmerHandler) Register(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		csrfToken, err := utils.SetCSRFToken(w)
+		if err != nil {
+			log.Printf("Error setting CSRF token: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		// no templ for now
+		err = h.Templates["farmer_register"].Execute(w, map[string]string{"CSRFToken": csrfToken})
+		if err != nil {
+			log.Printf("Error rendering template: %v", err)
+			http.Error(w, "Error rendering template", http.StatusInternalServerError)
+			return
+		}
+
+	case http.MethodPost:
+		err := utils.ValidateCSRFToken(r)
+		if err != nil {
+			log.Printf("Invalid CSRF token: %v", err)
+			http.Error(w, "Invalid CSRF Token", http.StatusForbidden)
+			return
+		}
+
+		err = r.ParseForm()
+		if err != nil {
+			log.Printf("Error parsing form: %v", err)
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		email := r.FormValue("email")
+		password := r.FormValue("password")
+		confirmPassword := r.FormValue("confirm_password")
+		firstName := r.FormValue("first_name")
+		lastName := r.FormValue("last_name")
+		farmName := r.FormValue("farm_name")
+		farmSize := r.FormValue("farm_size")
+		location := r.FormValue("location")
+
+		if email == "" || password == "" || confirmPassword == "" || firstName == "" || lastName == "" || farmName == "" || farmSize == "" || location == "" {
+			http.Error(w, "All fields are required", http.StatusBadRequest)
+			return
+		}
+
+		if password != confirmPassword {
+			http.Error(w, "Passwords do not match", http.StatusBadRequest)
+			return
+		}
+
+		exists, err := models.CheckFarmerExists(h.DB, email)
+		if err != nil {
+			log.Printf("Error checking farmer existence: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		if exists {
+			http.Error(w, "A farmer with this email already exists", http.StatusConflict)
+			return
+		}
+
+		hashedPassword, err := utils.HashPassword(password)
+		if err != nil {
+			log.Printf("Error hashing password: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		farmer := &models.Farmer{
+			Email:        email,
+			PasswordHash: hashedPassword,
+			FirstName:    firstName,
+			LastName:     lastName,
+			FarmName:     farmName,
+			FarmSize:     farmSize,
+			Location:     location,
+			Status:       "pending",
+			IsActive:     false,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+
+		err = models.CreateFarmer(h.DB, farmer)
+		if err != nil {
+			log.Printf("Error creating farmer: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/farmer/login", http.StatusSeeOther)
+
+	default:
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	}
 }
