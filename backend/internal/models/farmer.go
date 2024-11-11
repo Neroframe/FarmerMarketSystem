@@ -19,7 +19,6 @@ type Farmer struct {
 	UpdatedAt time.Time
 }
 
-// GetPendingFarmers retrieves all farmers with a pending status.
 func GetPendingFarmers(db *sql.DB) ([]Farmer, error) {
 	rows, err := db.Query(`
 		SELECT id, email, first_name, last_name, farm_name, farm_size, location, status, created_at
@@ -59,7 +58,6 @@ func GetPendingFarmers(db *sql.DB) ([]Farmer, error) {
 	return farmers, nil
 }
 
-// GetFarmerByID retrieves a farmer's details by their ID.
 func GetFarmerByID(db *sql.DB, farmerID int) (*Farmer, error) {
 	var farmer Farmer
 	err := db.QueryRow(`

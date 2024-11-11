@@ -12,13 +12,11 @@ import (
 	"fms/backend/internal/utils"
 )
 
-// AdminHandler handles admin-related requests.
 type AdminHandler struct {
 	DB        *sql.DB
 	Templates map[string]*template.Template
 }
 
-// NewAdminHandler initializes a new AdminHandler.
 func NewAdminHandler(db *sql.DB, templates map[string]*template.Template) *AdminHandler {
 	return &AdminHandler{
 		DB:        db,
@@ -27,7 +25,6 @@ func NewAdminHandler(db *sql.DB, templates map[string]*template.Template) *Admin
 }
 
 func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
-	// Render the registration form
 	if r.Method == http.MethodGet {
 		csrfToken, err := utils.SetCSRFToken(w)
 		if err != nil {
@@ -44,7 +41,6 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// register
 	if r.Method == http.MethodPost {
 		// Validate CSRF token
 		err := utils.ValidateCSRFToken(r)
@@ -77,11 +73,10 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Check if admin already exists by email
 		exists, err := models.CheckAdminExists(h.DB, email)
 		if err != nil {
 			log.Printf("Error checking admin existence: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error: CheckAdminExists", http.StatusInternalServerError)
 			return
 		}
 		if exists {
@@ -118,7 +113,6 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		// Render the login form
 		csrfToken, err := utils.SetCSRFToken(w)
 		if err != nil {
 			log.Printf("Error setting CSRF token: %v", err)
@@ -135,7 +129,6 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		// Validate CSRF token
 		err := utils.ValidateCSRFToken(r)
 		if err != nil {
 			log.Printf("Invalid CSRF token: %v", err)
@@ -143,7 +136,6 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Parse form data
 		err = r.ParseForm()
 		if err != nil {
 			log.Printf("Error parsing form: %v", err)
@@ -154,13 +146,11 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 		email := r.FormValue("email")
 		password := r.FormValue("password")
 
-		// Input validation
 		if email == "" || password == "" {
 			http.Error(w, "Email and Password are required", http.StatusBadRequest)
 			return
 		}
 
-		// Authenticate admin
 		admin, err := models.AuthenticateAdmin(h.DB, email, password)
 		if err != nil {
 			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
@@ -175,16 +165,13 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Redirect to admin dashboard
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
 
 func (h *AdminHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the session ID from the request cookies.
 	sessionID, err := utils.GetSessionID(r)
 	if err == nil {
-		// Destroy the session in the database.
 		err = utils.DestroySession(h.DB, sessionID)
 		if err != nil {
 			log.Printf("Error destroying session: %v", err)
@@ -200,12 +187,11 @@ func (h *AdminHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 
-	// Redirect to login page.
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the admin from context.
+	// Retrieve the admin from context
 	admin, ok := r.Context().Value(middleware.AdminContextKey).(*models.Admin)
 	if !ok {
 		log.Println("Admin not found in context. Redirecting to login.")
@@ -213,12 +199,12 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare data to pass to the template.
+	// Prepare data to pass to the template
 	data := map[string]interface{}{
 		"Email": admin.Email,
 	}
 
-	// Fetch pending farmers using models.GetPendingFarmers.
+	// Fetch pending farmers 
 	pendingFarmers, err := models.GetPendingFarmers(h.DB)
 	if err != nil {
 		log.Printf("Error fetching pending farmers: %v", err)
@@ -226,7 +212,6 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add concatenated names to each farmer for template display.
 	var displayFarmers []map[string]interface{}
 	for _, farmer := range pendingFarmers {
 		displayFarmer := map[string]interface{}{
@@ -250,15 +235,6 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	// Ensure only admins can access this handler.
-	_, ok := r.Context().Value(middleware.AdminContextKey).(*models.Admin)
-	if !ok {
-		http.Error(w, "Access denied: Admin privileges required", http.StatusForbidden)
-		log.Println("Unauthorized access attempt to ListUsers")
-		return
-	}
-
-	// Fetch all farmers.
 	farmers, err := models.GetAllFarmers(h.DB)
 	if err != nil {
 		http.Error(w, "Could not retrieve farmers", http.StatusInternalServerError)
@@ -266,7 +242,6 @@ func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch all buyers.
 	buyers, err := models.GetAllBuyers(h.DB)
 	if err != nil {
 		http.Error(w, "Could not retrieve buyers", http.StatusInternalServerError)
@@ -274,13 +249,11 @@ func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare data for the template.
 	data := map[string]interface{}{
 		"Farmers": farmers,
 		"Buyers":  buyers,
 	}
 
-	// Render the template.
 	err = h.Templates["user_list"].Execute(w, data)
 	if err != nil {
 		http.Error(w, "Could not render users list", http.StatusInternalServerError)

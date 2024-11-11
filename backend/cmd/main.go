@@ -23,7 +23,7 @@ func main() {
 	// export DB_USER=postgres
 	// export DB_PASSWORD=123
 	// export DB_NAME=fms_db
-	// Check db connection
+	// Test db connection
 	// psql -h <Windows_Host_IP> -U <your_db_user> -d <your_db_name>
 
 	// Initialize database connection
@@ -40,7 +40,7 @@ func main() {
 
 	log.Println("Successfully connected to the database!")
 
-	// Parse all templates in the 'web/templates' directory
+	// Parse templates in 'web/templates' 
 	templates, err := parseTemplates("web/templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
@@ -66,14 +66,11 @@ func main() {
 	http.Handle("/reject-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.RejectFarmer))))
 
 	// Admin-only user management routes (require admin authorization)
-	// Base route for listing all users
 	http.Handle("/admin/users", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(adminHandler.ListUsers))))
-
 	// Routes for farmers
 	http.Handle("/admin/users/toggle-farmer-status", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ToggleFarmerStatus))))
 	http.Handle("/admin/users/edit-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.EditFarmer))))
 	http.Handle("/admin/users/delete-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.DeleteFarmer))))
-
 	// Routes for buyers
 	http.Handle("/admin/users/toggle-buyer-status", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(buyerHandler.ToggleBuyerStatus))))
 	http.Handle("/admin/users/edit-buyer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(buyerHandler.EditBuyer))))
@@ -90,7 +87,6 @@ func main() {
 	}
 }
 
-// parseTemplates in the specified directory and returns a map.
 func parseTemplates(pattern string) (map[string]*template.Template, error) {
 	tmplMap := make(map[string]*template.Template)
 

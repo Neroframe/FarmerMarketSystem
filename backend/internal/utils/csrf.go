@@ -8,7 +8,6 @@ import (
     "time"
 )
 
-// SetCSRFToken generates a CSRF token, sets it as a cookie, and returns the token.
 func SetCSRFToken(w http.ResponseWriter) (string, error) {
     tokenBytes := make([]byte, 32)
     _, err := rand.Read(tokenBytes)
@@ -30,21 +29,18 @@ func SetCSRFToken(w http.ResponseWriter) (string, error) {
     return token, nil
 }
 
-// ValidateCSRFToken compares the CSRF token from the form with the token in the cookie.
+// Compares the CSRF tokens (form and cookie)
 func ValidateCSRFToken(r *http.Request) error {
-    // Get CSRF token from form
     formToken := r.FormValue("csrf_token")
     if formToken == "" {
         return errors.New("csrf token not provided")
     }
 
-    // Get CSRF token from cookie
     cookie, err := r.Cookie("csrf_token")
     if err != nil {
         return errors.New("csrf token cookie not found")
     }
 
-    // Compare tokens
     if formToken != cookie.Value {
         return errors.New("invalid csrf token")
     }

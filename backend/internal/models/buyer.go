@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// Buyer represents a buyer in the system.
 type Buyer struct {
 	ID                  int
 	Email               string
@@ -20,7 +19,6 @@ type Buyer struct {
 	UpdatedAt           time.Time
 }
 
-// GetAllBuyers retrieves all buyers from the database.
 func GetAllBuyers(db *sql.DB) ([]Buyer, error) {
 	rows, err := db.Query(`
 		SELECT id, email, first_name, last_name, delivery_address, delivery_preferences, is_active, created_at, updated_at
@@ -69,7 +67,6 @@ func GetAllBuyers(db *sql.DB) ([]Buyer, error) {
 	return buyers, nil
 }
 
-// GetBuyerByID retrieves a buyer's details by their ID.
 func GetBuyerByID(db *sql.DB, buyerID int) (*Buyer, error) {
 	var buyer Buyer
 	var deliveryPreferencesJSON []byte
@@ -104,7 +101,6 @@ func GetBuyerByID(db *sql.DB, buyerID int) (*Buyer, error) {
 	return &buyer, nil
 }
 
-// UpdateBuyer updates a buyer's details in the database.
 func UpdateBuyer(db *sql.DB, buyer Buyer) error {
 	_, err := db.Exec(`
         UPDATE buyers
