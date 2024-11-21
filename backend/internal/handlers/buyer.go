@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fms/backend/internal/models"
+	"fms/backend/internal/utils"
 	"html/template"
 	"log"
 	"net/http"
@@ -22,6 +24,7 @@ func NewBuyerHandler(db *sql.DB, templates map[string]*template.Template) *Buyer
 	}
 }
 
+// admin-only funcs
 func (h *BuyerHandler) ToggleBuyerStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -126,4 +129,61 @@ func (h *BuyerHandler) DeleteBuyer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+}
+
+// buyer-specific funcs
+func (h *BuyerHandler) Login(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received /buyer/login request")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed buyer login", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse JSON request body
+	var loginData struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&loginData)
+	if err != nil {
+		log.Printf("Error decoding login data: %v", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate input
+	if loginData.Email == "" || loginData.Password == "" {
+		http.Error(w, "Email and Password are required", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch buyer by email
+	buyer, err := models.GetBuyerByEmail(h.DB, loginData.Email)
+	if err != nil {
+		log.Printf("Error fetching buyer: %v", err)
+		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		return
+	}
+
+	// Validate password
+	if !utils.CheckPasswordHash(loginData.Password, buyer.PasswordHash) {
+		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		return
+	}
+	http.Error(w, "success", http.StatusUnauthorized)
+
+	// Respond with token
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Login successful",
+	})
+}
+
+func (h *BuyerHandler) Register(w http.ResponseWriter, r *http.Request) {
+	
+}
+
+func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
+
 }

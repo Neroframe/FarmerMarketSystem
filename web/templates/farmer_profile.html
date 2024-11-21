@@ -11,7 +11,7 @@
     <p><strong>Location:</strong> {{.Farmer.Location}}</p>
 
     <!-- Approve Button -->
-    <form action="/approve-farmer" method="post" style="display: inline;">
+    <form action="/dashboard/approve-farmer" method="post" style="display: inline;">
         <input type="hidden" name="id" value="{{.Farmer.ID}}">
         <button type="submit">Approve</button>
     </form>
@@ -20,7 +20,7 @@
     <button onclick="showRejectForm()">Reject</button>
 
     <!-- Hidden Reject Form -->
-    <form id="rejectForm" action="/reject-farmer" method="post" style="display: none;">
+    <form id="rejectForm" action="/dashboard/reject-farmer" method="post" style="display: none;">
         <input type="hidden" name="id" value="{{.Farmer.ID}}">
         <label for="reason">Reason for rejection:</label><br>
         <textarea name="reason" id="reason" required></textarea><br>

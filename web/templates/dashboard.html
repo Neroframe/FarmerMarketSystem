@@ -1,75 +1,78 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Admin Dashboard</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            width: 80%;
-            margin: auto;
-        }
-        h1 {
-            color: #333;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
+      body {
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        width: 80%;
+        margin: auto;
+      }
+      h1 {
+        color: #333;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ccc;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Welcome, {{.Email}}!</h1>
-        <p>This is your admin dashboard.</p>
+      <h1>Welcome, {{.Email}}!</h1>
+      <p>This is your admin dashboard.</p>
 
-        <!-- Navigation Menu -->
-        <ul>
-            <li><a href="/admin/users">Manage Users</a></li>
-            <li><a href="/logout">Logout</a></li>
-        </ul>
+      <!-- Navigation Menu -->
+      <ul>
+        <li><a href="/admin/users">Manage Users</a></li>
+        <li><a href="/logout">Logout</a></li>
+      </ul>
 
-        <!-- Pending Farmers Section -->
-        <h2>Pending Farmers</h2>
-        {{if .PendingFarmers}}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Farm Size</th>
-                        <th>Location</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .PendingFarmers}}
-                    <tr>
-                        <td>{{.Name}}</td>
-                        <td>{{.Email}}</td>
-                        <td>{{.FarmSize}}</td>
-                        <td>{{.Location}}</td>
-                        <td>
-                            <a href="/farmer-profile?id={{.ID}}">View Profile</a>
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        {{else}}
-            <p>No pending farmers at this time.</p>
-        {{end}}
+      <!-- Pending Farmers Section -->
+      <h2>Pending Farmers</h2>
+      {{if .PendingFarmers}}
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Farm Size</th>
+            <th>Location</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .PendingFarmers}}
+          <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Email}}</td>
+            <td>{{.FarmSize}}</td>
+            <td>{{.Location}}</td>
+            <td>
+              <a href="/dashboard/farmer-profile?id={{.ID}}">View Profile</a>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <p>No pending farmers at this time.</p>
+      {{end}}
     </div>
-</body>
+  </body>
 </html>

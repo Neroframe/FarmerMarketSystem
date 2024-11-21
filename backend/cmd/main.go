@@ -10,16 +10,16 @@ import (
 	"fms/backend/internal/handlers"
 	"fms/backend/internal/middleware"
 
-	_ "github.com/lib/pq" // Replace with your database driver
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	dbConn, err := db.NewPostgresDB(
-		"172.17.0.1", // Host IP
-		"5432",       // Port
-		"postgres",   // User
-		"123",        // Password
-		"fms",        // Database Name
+		"172.22.16.1", // Host IP
+		"5432",        // Port
+		"postgres",    // User
+		"123",         // Password
+		"fms",         // Database Name
 	)
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
@@ -27,48 +27,61 @@ func main() {
 
 	log.Println("Successfully connected to the database!")
 
-	// Parse templates in 'web/templates'
 	templates, err := parseTemplates("web/templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
 	}
 
-	// Initialize handlers with the parsed templates
 	adminHandler := handlers.NewAdminHandler(dbConn, templates)
 	farmerHandler := handlers.NewFarmerHandler(dbConn, templates)
 	buyerHandler := handlers.NewBuyerHandler(dbConn, templates)
 
-	// Public routes
+	http.Handle("/favicon.ico", http.HandlerFunc(http.NotFound))
+
 	http.HandleFunc("/register", adminHandler.Register)
 	http.HandleFunc("/login", adminHandler.Login)
-
-	// Protected routes
-	http.Handle("/dashboard", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Dashboard)))
 	http.Handle("/logout", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Logout)))
 
-	// Dashboard routes 
-	http.Handle("/pending-farmers", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ListPendingFarmers))))
-	http.Handle("/farmer-profile", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ViewFarmerProfile))))
-	http.Handle("/approve-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ApproveFarmer))))
-	http.Handle("/reject-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.RejectFarmer))))
+	// Dashboard routes
+	http.Handle("/dashboard", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Dashboard)))
+	http.Handle("/dashboard/pending-farmers", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ListPendingFarmers))))
+	http.Handle("/dashboard/farmer-profile", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ViewFarmerProfile))))
+	http.Handle("/dashboard/approve-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ApproveFarmer))))
+	http.Handle("/dashboard/reject-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.RejectFarmer))))
 
 	// User management routes
 	http.Handle("/admin/users", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(adminHandler.ListUsers))))
-	// Routes for farmers
+
 	http.Handle("/admin/users/toggle-farmer-status", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ToggleFarmerStatus))))
 	http.Handle("/admin/users/edit-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.EditFarmer))))
 	http.Handle("/admin/users/delete-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.DeleteFarmer))))
-	// Routes for buyers
+
 	http.Handle("/admin/users/toggle-buyer-status", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(buyerHandler.ToggleBuyerStatus))))
 	http.Handle("/admin/users/edit-buyer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(buyerHandler.EditBuyer))))
 	http.Handle("/admin/users/delete-buyer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(buyerHandler.DeleteBuyer))))
 
-	// Handle favicon requests
-	http.Handle("/favicon.ico", http.HandlerFunc(http.NotFound))
+	// Buyer Routes
+	http.Handle("/buyer/register", middleware.CORS(http.HandlerFunc(buyerHandler.Register)))
+	http.Handle("/buyer/login", middleware.CORS(http.HandlerFunc(buyerHandler.Login)))
+	http.Handle("/buyer/logout", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(buyerHandler.Logout))))
 
-	// Start the server on port 8080
+	// home - search, categories
+	// http.Handle("/buyer/home", middleware.CORS(http.HandlerFunc(buyerHandler.Home)))
+	// http.Handle("/buyer/view-product", middleware.CORS(http.HandlerFunc(buyerHandler.ViewProduct)))
+
+	// Farmer Routes
+	http.Handle("/farmer/register", middleware.CORS(http.HandlerFunc(farmerHandler.Register)))
+	http.Handle("/farmer/login", middleware.CORS(http.HandlerFunc(farmerHandler.Login)))
+	http.Handle("/farmer/logout", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.Logout))))
+
+	// dashboard - list products, manage inventory, track sales
+	// http.Handle("/farmer/dashboard", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.Dashboard))))
+	// http.Handle("/farmer/dashboard/add-product", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.AddProduct))))
+	// http.Handle("/farmer/dashboard/edit-product", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.EditProduct))))
+	// http.Handle("/farmer/dashboard/delete-product", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.DeleteProduct))))
+
 	log.Println("Server starting on :8080")
-	err = http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe("0.0.0.0:8080", nil)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
@@ -85,9 +98,9 @@ func parseTemplates(pattern string) (map[string]*template.Template, error) {
 
 	// Iterate over each parsed template
 	for _, tmpl := range templates.Templates() {
-		name := tmpl.Name()                  // e.g., "login.html"
-		base := filepath.Base(name)          // e.g., "login.html"
-		key := base[:len(base)-len(".html")] // e.g., "login"
+		name := tmpl.Name()
+		base := filepath.Base(name)
+		key := base[:len(base)-len(".html")]
 
 		tmplMap[key] = tmpl // Map "login" to the "login.html" template
 	}

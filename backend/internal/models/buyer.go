@@ -7,16 +7,16 @@ import (
 )
 
 type Buyer struct {
-	ID                  int
-	Email               string
-	PasswordHash        string
-	FirstName           string
-	LastName            string
-	DeliveryAddress     string
-	DeliveryPreferences map[string]interface{} // Use a map to represent JSONB fields
-	IsActive            bool
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	ID                  int                    `json:"id"`
+	Email               string                 `json:"email"`
+	PasswordHash        string                 `json:"-"`
+	FirstName           string                 `json:"first_name"`
+	LastName            string                 `json:"last_name"`
+	DeliveryAddress     string                 `json:"delivery_address"`
+	DeliveryPreferences map[string]interface{} `json:"delivery_preferences"`
+	IsActive            bool                   `json:"is_active"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
 }
 
 func GetAllBuyers(db *sql.DB) ([]Buyer, error) {
@@ -109,4 +109,38 @@ func UpdateBuyer(db *sql.DB, buyer Buyer) error {
 		buyer.Email, buyer.FirstName, buyer.LastName, buyer.DeliveryAddress, buyer.IsActive, time.Now(), buyer.ID,
 	)
 	return err
+}
+
+func GetBuyerByEmail(db *sql.DB, email string) (*Buyer, error) {
+	var buyer Buyer
+	var deliveryPreferencesJSON []byte
+
+	err := db.QueryRow(`
+		SELECT id, email, first_name, last_name, delivery_address, delivery_preferences, is_active, created_at, updated_at
+		FROM buyers
+		WHERE email = $1`, email).
+		Scan(
+			&buyer.ID,
+			&buyer.Email,
+			&buyer.FirstName,
+			&buyer.LastName,
+			&buyer.DeliveryAddress,
+			&deliveryPreferencesJSON,
+			&buyer.IsActive,
+			&buyer.CreatedAt,
+			&buyer.UpdatedAt,
+		)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal JSONB data into a map
+	if len(deliveryPreferencesJSON) > 0 {
+		err = json.Unmarshal(deliveryPreferencesJSON, &buyer.DeliveryPreferences)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &buyer, nil
 }
