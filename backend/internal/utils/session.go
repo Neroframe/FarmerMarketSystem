@@ -31,6 +31,10 @@ func CreateSession(w http.ResponseWriter, db *sql.DB, userID int, userType strin
 		Expires:  expiresAt,
 		HttpOnly: true,
 		Path:     "/",
+		// During development
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode, // Or another appropriate mode
+
 	})
 
 	return sessionID, nil

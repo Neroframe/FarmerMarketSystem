@@ -138,3 +138,22 @@ func CreateFarmer(db *sql.DB, farmer *Farmer) error {
 	}
 	return nil
 }
+
+func GetFarmerByEmail(db *sql.DB, email string) (*Farmer, error) {
+	var farmer Farmer
+	err := db.QueryRow(`
+		SELECT id, email, password_hash, first_name, last_name, farm_name, farm_size, location, status, is_active, created_at, updated_at
+		FROM farmers
+		WHERE email = $1
+	`, email).Scan(
+		&farmer.ID, &farmer.Email, &farmer.PasswordHash, &farmer.FirstName, &farmer.LastName,
+		&farmer.FarmName, &farmer.FarmSize, &farmer.Location, &farmer.Status,
+		&farmer.IsActive, &farmer.CreatedAt, &farmer.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &farmer, nil
+}

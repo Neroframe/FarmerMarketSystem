@@ -59,7 +59,7 @@ func Authenticate(db *sql.DB, next http.Handler) http.Handler {
 			ctx = context.WithValue(r.Context(), FarmerContextKey, farmer)
 
 		default:
-			http.Redirect(w, r, "/login", http.StatusFound)
+			// http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 

@@ -116,12 +116,13 @@ func GetBuyerByEmail(db *sql.DB, email string) (*Buyer, error) {
 	var deliveryPreferencesJSON []byte
 
 	err := db.QueryRow(`
-		SELECT id, email, first_name, last_name, delivery_address, delivery_preferences, is_active, created_at, updated_at
+		SELECT id, email, password_hash, first_name, last_name, delivery_address, delivery_preferences, is_active, created_at, updated_at
 		FROM buyers
 		WHERE email = $1`, email).
 		Scan(
 			&buyer.ID,
 			&buyer.Email,
+			&buyer.PasswordHash, // Include password hash
 			&buyer.FirstName,
 			&buyer.LastName,
 			&buyer.DeliveryAddress,
@@ -144,3 +145,46 @@ func GetBuyerByEmail(db *sql.DB, email string) (*Buyer, error) {
 
 	return &buyer, nil
 }
+
+func CreateBuyer(db *sql.DB, buyer *Buyer) error {
+	deliveryPreferencesJSON, err := json.Marshal(buyer.DeliveryPreferences)
+	if err != nil {
+		return err
+	}
+
+	query := `
+		INSERT INTO buyers (
+			email, 
+			password_hash, 
+			first_name, 
+			last_name, 
+			delivery_address, 
+			delivery_preferences, 
+			is_active, 
+			created_at, 
+			updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9
+		) RETURNING id
+	`
+
+	err = db.QueryRow(query,
+		buyer.Email,
+		buyer.PasswordHash,
+		buyer.FirstName,
+		buyer.LastName,
+		buyer.DeliveryAddress,
+		deliveryPreferencesJSON,
+		buyer.IsActive,
+		time.Now(),
+		time.Now(),
+	).Scan(&buyer.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+

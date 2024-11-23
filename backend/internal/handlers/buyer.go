@@ -132,14 +132,94 @@ func (h *BuyerHandler) DeleteBuyer(w http.ResponseWriter, r *http.Request) {
 }
 
 // buyer-specific funcs
+func (h *BuyerHandler) Register(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Email               string                 `json:"email"`
+		Password            string                 `json:"password"`
+		FirstName           string                 `json:"first_name"`
+		LastName            string                 `json:"last_name"`
+		DeliveryAddress     string                 `json:"delivery_address"`
+		DeliveryPreferences map[string]interface{} `json:"delivery_preferences"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&req); err != nil {
+		log.Printf("Error decoding JSON: %v", err)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	if req.Email == "" || req.Password == "" || req.FirstName == "" || req.LastName == "" {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	existingBuyer, err := models.GetBuyerByEmail(h.DB, req.Email)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("Error checking existing buyer: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if existingBuyer != nil {
+		http.Error(w, "Buyer with this email already exists", http.StatusConflict)
+		return
+	}
+
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		log.Printf("Error hashing password: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	buyer := &models.Buyer{
+		Email:               req.Email,
+		PasswordHash:        string(hashedPassword),
+		FirstName:           req.FirstName,
+		LastName:            req.LastName,
+		DeliveryAddress:     req.DeliveryAddress,
+		DeliveryPreferences: req.DeliveryPreferences,
+		IsActive:            true,
+	}
+
+	err = models.CreateBuyer(h.DB, buyer)
+	if err != nil {
+		http.Error(w, "Failed to register buyer", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		ID    int    `json:"id"`
+		Email string `json:"email"`
+	}{
+		ID:    buyer.ID,
+		Email: buyer.Email,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding response JSON: %v", err)
+		http.Error(w, "Failed to send response", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Successfully registered buyer with ID: %d", buyer.ID)
+}
+
 func (h *BuyerHandler) Login(w http.ResponseWriter, r *http.Request) {
-	log.Println("Received /buyer/login request")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed buyer login", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Parse JSON request body
 	var loginData struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -151,13 +231,12 @@ func (h *BuyerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate input
 	if loginData.Email == "" || loginData.Password == "" {
 		http.Error(w, "Email and Password are required", http.StatusBadRequest)
 		return
 	}
 
-	// Fetch buyer by email
+	// log.Printf("Attempting to fetch buyer with email: %s", loginData.Email)
 	buyer, err := models.GetBuyerByEmail(h.DB, loginData.Email)
 	if err != nil {
 		log.Printf("Error fetching buyer: %v", err)
@@ -165,12 +244,12 @@ func (h *BuyerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate password
+	// log.Printf("Checking password: %s against hash: %s", loginData.Password, buyer.PasswordHash)
 	if !utils.CheckPasswordHash(loginData.Password, buyer.PasswordHash) {
+		log.Println("Password validation failed")
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
-	http.Error(w, "success", http.StatusUnauthorized)
 
 	// Respond with token
 	w.Header().Set("Content-Type", "application/json")
@@ -180,10 +259,37 @@ func (h *BuyerHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *BuyerHandler) Register(w http.ResponseWriter, r *http.Request) {
-	
+func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Invalidate the user's session or token (implementation depends on your session/token management strategy)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message": "Successfully logged out"}`))
 }
 
-func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
+	log.Println("Handling /buyer/home request")
 
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	products, err := models.GetAllActiveProducts(h.DB) // TODO
+	if err != nil {
+		log.Printf("Error fetching products: %v", err)
+		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(products); err != nil {
+		log.Printf("Error encoding products to JSON: %v", err)
+		http.Error(w, "Failed to encode products", http.StatusInternalServerError)
+	}
 }
