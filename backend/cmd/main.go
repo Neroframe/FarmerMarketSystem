@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -28,6 +29,10 @@ func main() {
 
 	log.Println("Successfully connected to the database!")
 
+	cwd, _ := os.Getwd()
+	log.Printf("Current working directory: %s\n", cwd)
+
+	// Use a relative path to the templates directory
 	templates, err := parseTemplates("web/templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
@@ -97,19 +102,25 @@ func main() {
 func parseTemplates(pattern string) (map[string]*template.Template, error) {
 	tmplMap := make(map[string]*template.Template)
 
-	// Parse all templates matching the pattern
-	templates, err := template.ParseGlob(pattern)
+	// Get the absolute path for the templates directory
+	absPattern, err := filepath.Abs(pattern)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error resolving absolute path: %v", err)
 	}
 
-	// Iterate over each parsed template
+	// Parse all templates matching the pattern
+	templates, err := template.ParseGlob(absPattern)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing templates: %v", err)
+	}
+
+	// Map templates to their base names
 	for _, tmpl := range templates.Templates() {
 		name := tmpl.Name()
 		base := filepath.Base(name)
 		key := base[:len(base)-len(".html")]
 
-		tmplMap[key] = tmpl // Map "login" to the "login.html" template
+		tmplMap[key] = tmpl
 	}
 
 	return tmplMap, nil

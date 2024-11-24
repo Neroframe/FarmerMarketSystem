@@ -1,4 +1,4 @@
-# Use the official Go image as the base image
+# Use the official Go image as the build stage
 FROM golang:1.23.2 as builder
 
 # Set the working directory inside the container
@@ -22,8 +22,14 @@ FROM debian:buster-slim
 # Set the working directory
 WORKDIR /app
 
+# Install necessary dependencies (if any)
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
 # Copy the compiled binary from the builder stage
 COPY --from=builder /fms-backend .
+
+# Copy the templates directory from the builder stage
+COPY --from=builder /app/web/templates /app/web/templates
 
 # Expose the port your application listens on
 EXPOSE 8080
