@@ -26,13 +26,14 @@ func CreateSession(w http.ResponseWriter, db *sql.DB, userID int, userType strin
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    sessionID,
-		Expires:  expiresAt,
+		Name:    "session_id",
+		Value:   sessionID,
+		Expires: expiresAt,
+		Path:    "/",
+		// Production values
 		HttpOnly: true,
-		Path:     "/",
-		// During development
-		Secure:   false,
+		Secure:   true,
+		// SameSite: http.SameSiteStrictMode, // Prevents CSRF attacks
 		SameSite: http.SameSiteNoneMode, // Allows cross-site cookie
 	})
 

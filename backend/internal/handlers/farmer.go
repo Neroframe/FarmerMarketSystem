@@ -3,14 +3,15 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/Neroframe/FarmerMarketSystem/backend/internal/middleware"
-	"github.com/Neroframe/FarmerMarketSystem/backend/internal/models"
-	"github.com/Neroframe/FarmerMarketSystem/backend/internal/utils"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/middleware"
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/models"
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/utils"
 )
 
 type FarmerHandler struct {
@@ -336,25 +337,21 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Define a struct to parse the incoming JSON payload.
 	var req struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
-	// Decode the JSON payload into the struct.
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	// Validate that both email and password are provided.
 	if req.Email == "" || req.Password == "" {
 		http.Error(w, "Email and Password are required", http.StatusBadRequest)
 		return
 	}
 
-	// Retrieve the farmer by email from the database.
 	farmer, err := models.GetFarmerByEmail(h.DB, req.Email)
 	if err != nil || farmer == nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
@@ -367,26 +364,23 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Compare the provided password with the stored hashed password.
 	if !utils.CheckPasswordHash(req.Password, farmer.PasswordHash) {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
-	// Create a new session for the authenticated farmer.
 	sessionID, err := utils.CreateSession(w, h.DB, farmer.ID, "farmer")
 	if err != nil {
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
 
-	// Respond with a success message and session details.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success":    true,
-		"message":    "Login successful",
-		"session_id": sessionID, // Optional: Can be omitted since it's set as a cookie
+		"success": true,
+		"message": "Login successful",
+		"session_id": sessionID, 
 	})
 }
 

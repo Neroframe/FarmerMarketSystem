@@ -20,9 +20,10 @@ func SetCSRFToken(w http.ResponseWriter) (string, error) {
 		Name:     "csrf_token",
 		Value:    token,
 		Path:     "/",
+        HttpOnly: true,  // Prevents JavaScript access
 		Expires:  time.Now().Add(24 * time.Hour),
-		HttpOnly: true,  // Prevents JavaScript access
-		Secure:   false, // Set to true in production with HTTPS
+        // Production values
+        Secure:   true,
 		// SameSite: http.SameSiteStrictMode,   // Prevents CSRF attacks
 		SameSite: http.SameSiteNoneMode, // Allows cross-site cookie
 	}
