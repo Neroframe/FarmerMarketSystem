@@ -45,6 +45,7 @@ func main() {
 
 	http.Handle("/favicon.ico", http.HandlerFunc(http.NotFound))
 
+	http.HandleFunc("/", adminHandler.Root)
 	http.HandleFunc("/register", adminHandler.Register)
 	http.HandleFunc("/login", adminHandler.Login)
 	http.Handle("/logout", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Logout)))

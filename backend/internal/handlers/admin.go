@@ -24,6 +24,10 @@ func NewAdminHandler(db *sql.DB, templates map[string]*template.Template) *Admin
 	}
 }
 
+func (h *AdminHandler) Root(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
 func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		csrfToken, err := utils.SetCSRFToken(w)
@@ -204,7 +208,7 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"Email": admin.Email,
 	}
 
-	// Fetch pending farmers 
+	// Fetch pending farmers
 	pendingFarmers, err := models.GetPendingFarmers(h.DB)
 	if err != nil {
 		log.Printf("Error fetching pending farmers: %v", err)
