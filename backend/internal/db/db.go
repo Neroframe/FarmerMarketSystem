@@ -3,22 +3,24 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/lib/pq"
 )
 
-func NewPostgresDB(host, port, user, password, dbname string) (*sql.DB, error) {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+func NewPostgresDB(connStr string) (*sql.DB, error) {
+	log.Println("DEBUG: Opening database connection...")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open connection: %w", err)
 	}
 
-	// Test the connection
-	err = db.Ping()
-	if err != nil {
-		return nil, err
+	log.Println("DEBUG: Pinging database...")
+
+	if err = db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
+
+	log.Println("DEBUG: Database connection successful.")
 	return db, nil
 }

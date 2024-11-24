@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"fms/backend/internal/db"
@@ -14,16 +15,17 @@ import (
 )
 
 func main() {
-	dbConn, err := db.NewPostgresDB(
-		"172.22.16.1", // Host IP
-		"5432",        // Port
-		"postgres",    // User
-		"123",         // Password
-		"fms",         // Database Name
-	)
+	// Fetch DATABASE_URL from environment
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatalf("DATABASE_URL is not set. Ensure it's available in your environment variables.")
+	}
+
+	dbConn, err := db.NewPostgresDB(dbURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
+	defer dbConn.Close()
 
 	log.Println("Successfully connected to the database!")
 
@@ -81,8 +83,13 @@ func main() {
 	http.Handle("/farmer/product/edit-product", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.EditProduct))))
 	http.Handle("/farmer/product/delete-product", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.DeleteProduct))))
 
-	log.Println("Server starting on :8080")
-	err = http.ListenAndServe("0.0.0.0:8080", nil)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Server starting on port %s", port)
+	err = http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
