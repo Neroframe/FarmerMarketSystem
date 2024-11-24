@@ -31,7 +31,7 @@ func Authenticate(db *sql.DB, next http.Handler) http.Handler {
 			return
 		}
 
-		// Fetch user information based on user type and store in context with specific key.
+		// Fetch user information store in context with specific key
 		var ctx context.Context
 		switch userType {
 		case "admin":

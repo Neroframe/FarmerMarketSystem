@@ -33,8 +33,7 @@ func CreateSession(w http.ResponseWriter, db *sql.DB, userID int, userType strin
 		Path:     "/",
 		// During development
 		Secure:   false,
-		SameSite: http.SameSiteLaxMode, // Or another appropriate mode
-
+		SameSite: http.SameSiteNoneMode, // Allows cross-site cookie
 	})
 
 	return sessionID, nil

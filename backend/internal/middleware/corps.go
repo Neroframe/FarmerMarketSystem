@@ -12,12 +12,10 @@ var allowedOrigins = []string{
 }
 
 func isOriginAllowed(origin string) bool {
-	// Allow all localhost origins with any port
 	if strings.HasPrefix(origin, "http://localhost:") {
 		return true
 	}
 
-	// Check against the allowedOrigins list
 	for _, o := range allowedOrigins {
 		if o == origin {
 			return true
