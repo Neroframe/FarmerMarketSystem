@@ -1,41 +1,32 @@
-# Stage 1: Build the Go application
-FROM golang:1.23.2-alpine AS builder
-
-# Install git (required for go mod download if using private repositories)
-RUN apk update && apk add --no-cache git
+# Use the official Go image as the base image
+FROM golang:1.23.2 as builder
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum to leverage Docker's caching mechanism
+# Copy the Go modules manifests
 COPY go.mod go.sum ./
 
-# Download dependencies
+# Download the dependencies
 RUN go mod download
 
-# Copy the backend source code into the container
-COPY backend/ ./backend/
+# Copy the rest of the application code
+COPY . .
 
-# Change directory to where main.go is located
-WORKDIR /app/backend/cmd
+# Build the Go app
+RUN go build -o /fms-backend ./backend/cmd
 
-# Build the Go application
-RUN go build -o fms-backend .
+# Use a lightweight image for the runtime environment
+FROM debian:buster-slim
 
-# Stage 2: Create a minimal image to run the application
-FROM alpine:latest
-
-# Set the working directory inside the runtime container
+# Set the working directory
 WORKDIR /app
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/backend/cmd/fms-backend .
+# Copy the compiled binary from the builder stage
+COPY --from=builder /fms-backend .
 
-# Expose the port your app runs on
+# Expose the port your application listens on
 EXPOSE 8080
-
-# Set environment variables (optional, can be managed via Railway)
-ENV PORT=8080
 
 # Command to run the application
 CMD ["./fms-backend"]
