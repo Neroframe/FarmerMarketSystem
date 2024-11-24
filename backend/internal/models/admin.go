@@ -3,7 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fms/backend/internal/utils"
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/utils"
 	"time"
 )
 

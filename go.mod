@@ -1,4 +1,4 @@
-module fms
+module github.com/Neroframe/FarmerMarketSystem
 
 go 1.23.2
 

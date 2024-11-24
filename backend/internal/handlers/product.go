@@ -3,7 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fms/backend/internal/models"
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/models"
 	"html/template"
 	"log"
 	"net/http"
