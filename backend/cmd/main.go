@@ -15,10 +15,9 @@ import (
 )
 
 func main() {
-	// Fetch DATABASE_URL from environment
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatalf("DATABASE_URL is not set. Ensure it's available in your environment variables.")
+		log.Fatal("DATABASE_URL is not set")
 	}
 
 	dbConn, err := db.NewPostgresDB(dbURL)
