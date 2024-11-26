@@ -237,11 +237,33 @@ func UpdateProduct(db *sql.DB, product *Product) error {
 }
 
 func DeleteProduct(db *sql.DB, id int, farmerID int) error {
-	_, err := db.Exec(`
-		DELETE FROM products
-		WHERE id = $1 AND farmer_id = $2
-	`, id, farmerID)
-	return err
+	result, err := db.Exec(`
+        DELETE FROM products
+        WHERE id = $1 AND farmer_id = $2
+    `, id, farmerID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	// Delete related images
+	_, err = db.Exec(`
+        DELETE FROM product_images
+        WHERE product_id = $1
+    `, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func GetProductsWithFilters(db *sql.DB, filters map[string]string, limit, offset int) ([]Product, error) {

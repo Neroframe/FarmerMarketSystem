@@ -272,7 +272,6 @@ func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
-	// Ensure the request method is GET
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return

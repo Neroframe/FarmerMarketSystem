@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"log"
 	"net/http"
@@ -631,41 +632,40 @@ func (h *FarmerHandler) EditProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FarmerHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodDelete {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		ID int `json:"id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil || req.ID == 0 {
+		http.Error(w, "Bad Request: Invalid product ID", http.StatusBadRequest)
 		return
 	}
 
 	farmer, ok := r.Context().Value(middleware.FarmerContextKey).(*models.Farmer)
 	if !ok || farmer == nil {
-		http.Error(w, "Unauthorized: Farmer not found in context", http.StatusUnauthorized)
+		http.Error(w, "Unauthorized: Farmer not authenticated", http.StatusUnauthorized)
 		return
 	}
 
-	var payload struct {
-		ID int `json:"id"`
-	}
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&payload); err != nil {
-		log.Printf("Error decoding DeleteProduct request: %v", err)
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-
-	if payload.ID == 0 {
-		http.Error(w, "Product ID is required", http.StatusBadRequest)
-		return
-	}
-
-	err := models.DeleteProduct(h.DB, payload.ID, farmer.ID)
+	err = models.DeleteProduct(h.DB, req.ID, farmer.ID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Not Found: Product does not exist", http.StatusNotFound)
+			return
+		}
 		log.Printf("Error deleting product: %v", err)
-		http.Error(w, "Failed to delete product", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to delete product", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
 		"message": "Product deleted successfully",
