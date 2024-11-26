@@ -7,12 +7,16 @@ import (
 )
 
 var allowedOrigins = []string{
-	"https://your-frontend-domain.com", // Replace with actual production frontend domain
+	"https://your-frontend-domain.com", // TO DO
 	"https://farmermarketsystem-production.up.railway.app",
 }
 
 func isOriginAllowed(origin string) bool {
 	if strings.HasPrefix(origin, "http://localhost:") {
+		return true
+	}
+
+	if strings.HasSuffix(origin, ".exp.direct") {
 		return true
 	}
 
@@ -30,7 +34,7 @@ func CORS(next http.Handler) http.Handler {
 		log.Printf("CORS Middleware: %s %s Origin: %s", r.Method, r.URL.Path, origin)
 
 		if isOriginAllowed(origin) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
