@@ -271,29 +271,6 @@ func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message": "Successfully logged out"}`))
 }
 
-// func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
-// 	log.Println("Handling /buyer/home request")
-
-// 	if r.Method != http.MethodGet {
-// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-// 		return
-// 	}
-
-// 	products, err := models.GetAllActiveProducts(h.DB) // TODO
-// 	if err != nil {
-// 		log.Printf("Error fetching products: %v", err)
-// 		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	if err := json.NewEncoder(w).Encode(products); err != nil {
-// 		log.Printf("Error encoding products to JSON: %v", err)
-// 		http.Error(w, "Failed to encode products", http.StatusInternalServerError)
-// 	}
-// }
-
 func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
 	// Ensure the request method is GET
 	if r.Method != http.MethodGet {

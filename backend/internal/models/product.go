@@ -3,6 +3,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -243,18 +244,70 @@ func DeleteProduct(db *sql.DB, id int, farmerID int) error {
 	return err
 }
 
-func GetAllActiveProducts(db *sql.DB) ([]Product, error) {
-	rows, err := db.Query(`
+func GetProductsWithFilters(db *sql.DB, filters map[string]string, limit, offset int) ([]Product, error) {
+	query := `
 		SELECT id, farmer_id, name, category_id, price, quantity, description, is_active, created_at, updated_at
 		FROM products
 		WHERE is_active = TRUE
-	`)
+	`
+
+	conditions := []string{}
+	params := []interface{}{}
+	paramCounter := 1
+
+	// Filter by category
+	if category, ok := filters["category"]; ok && category != "" && strings.ToLower(category) != "all" {
+		conditions = append(conditions, fmt.Sprintf("category_id = $%d", paramCounter))
+		categoryID := getCategoryIDByName(category) // You'll need to implement this function
+		params = append(params, categoryID)
+		paramCounter++
+	}
+
+	// Search by name
+	if search, ok := filters["search"]; ok && search != "" {
+		conditions = append(conditions, fmt.Sprintf("LOWER(name) LIKE LOWER($%d)", paramCounter))
+		searchTerm := "%" + search + "%"
+		params = append(params, searchTerm)
+		paramCounter++
+	}
+
+	// Append conditions to the query
+	if len(conditions) > 0 {
+		query += " AND " + strings.Join(conditions, " AND ")
+	}
+
+	// Sorting
+	if sort, ok := filters["sort"]; ok && sort != "" {
+		switch sort {
+		case "price_asc":
+			query += " ORDER BY price ASC"
+		case "price_desc":
+			query += " ORDER BY price DESC"
+		case "date_asc":
+			query += " ORDER BY created_at ASC"
+		case "date_desc":
+			query += " ORDER BY created_at DESC"
+		default:
+			query += " ORDER BY created_at DESC"
+		}
+	} else {
+		query += " ORDER BY created_at DESC"
+	}
+
+	// Pagination
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramCounter, paramCounter+1)
+	params = append(params, limit, offset)
+	paramCounter += 2
+
+	// Execute the query
+	rows, err := db.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var products []Product
+
 	for rows.Next() {
 		var product Product
 
@@ -307,126 +360,20 @@ func GetAllActiveProducts(db *sql.DB) ([]Product, error) {
 	return products, nil
 }
 
-func GetProductsWithFilters(db *sql.DB, filters map[string]string, limit, offset int) ([]Product, error) {
-	// Initialize query parts
-	query := `
-		SELECT 
-			p.id, 
-			p.farmer_id, 
-			p.name, 
-			p.category_id, 
-			p.price, 
-			p.quantity, 
-			p.description, 
-			p.is_active, 
-			p.created_at, 
-			p.updated_at,
-			c.name as category_name,
-			f.location as farm_location
-		FROM products p
-		INNER JOIN categories c ON p.category_id = c.id
-		INNER JOIN farmers f ON p.farmer_id = f.id
-		WHERE p.is_active = TRUE
-	`
-	var params []interface{}
-	var conditions []string
-
-	// Filter by category
-	if category, ok := filters["category"]; ok && category != "" && strings.ToLower(category) != "all" {
-		conditions = append(conditions, "LOWER(c.name) = LOWER(?)")
-		params = append(params, category)
+func getCategoryIDByName(categoryName string) int {
+	categoryName = strings.ToLower(categoryName)
+	switch categoryName {
+	case "vegetables":
+		return 1
+	case "fruits":
+		return 2
+	case "seeds":
+		return 3
+	default:
+		return 0 // Or handle unknown categories appropriately
 	}
-
-	// Search by name, category, or farm location
-	if search, ok := filters["search"]; ok && search != "" {
-		conditions = append(conditions, `(LOWER(p.name) LIKE LOWER(?) OR LOWER(c.name) LIKE LOWER(?) OR LOWER(f.location) LIKE LOWER(?))`)
-		searchTerm := "%" + search + "%"
-		params = append(params, searchTerm, searchTerm, searchTerm)
-	}
-
-	// Append conditions to the query
-	if len(conditions) > 0 {
-		query += " AND " + strings.Join(conditions, " AND ")
-	}
-
-	// Sorting
-	if sort, ok := filters["sort"]; ok && sort != "" {
-		switch sort {
-		case "price_asc":
-			query += " ORDER BY p.price ASC"
-		case "price_desc":
-			query += " ORDER BY p.price DESC"
-		case "date_asc":
-			query += " ORDER BY p.created_at ASC"
-		case "date_desc":
-			query += " ORDER BY p.created_at DESC"
-		default:
-			query += " ORDER BY p.created_at DESC"
-		}
-	} else {
-		query += " ORDER BY p.created_at DESC"
-	}
-
-	// Pagination
-	query += " LIMIT ? OFFSET ?"
-	params = append(params, limit, offset)
-
-	// Prepare the query
-	stmt, err := db.Prepare(query)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	// Execute the query
-	rows, err := stmt.Query(params...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var products []Product
-
-	for rows.Next() {
-		var product Product
-		var categoryName string
-		var farmLocation string
-
-		err := rows.Scan(
-			&product.ID,
-			&product.FarmerID,
-			&product.Name,
-			&product.CategoryID,
-			&product.Price,
-			&product.Quantity,
-			&product.Description,
-			&product.IsActive,
-			&product.CreatedAt,
-			&product.UpdatedAt,
-			&categoryName,
-			&farmLocation,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		// Retrieve images for the product
-		images, err := GetProductImages(db, product.ID)
-		if err != nil {
-			return nil, err
-		}
-		product.Images = images
-
-		// Add category name and farm location to the product (if needed)
-		// You can extend the Product struct to include these fields or create a new struct
-
-		products = append(products, product)
-	}
-
-	return products, nil
 }
 
-// GetProductImages retrieves images for a given product ID
 func GetProductImages(db *sql.DB, productID int) ([]string, error) {
 	rows, err := db.Query(`
 		SELECT image_url
