@@ -33,13 +33,11 @@ func CORS(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		log.Printf("CORS Middleware: %s %s Origin: %s", r.Method, r.URL.Path, origin)
 
-		if isOriginAllowed(origin) {
+		if origin != "" {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-		} else {
-			log.Printf("CORS Middleware: Origin %s not allowed", origin)
 		}
 
 		// Handle preflight (OPTIONS) requests
@@ -49,7 +47,6 @@ func CORS(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println("CORS Middleware: success!")
 		next.ServeHTTP(w, r)
 	})
 }

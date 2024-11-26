@@ -375,7 +375,7 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, err := utils.CreateSession(w, h.DB, farmer.ID, "farmer")
+	_, err = utils.CreateSession(w, h.DB, farmer.ID, "farmer")
 	if err != nil {
 		log.Printf("Error creating session: %v", err)
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
@@ -385,9 +385,9 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success":    true,
-		"message":    "Login successful",
-		"session_id": sessionID,
+		"success": true,
+		"message": "Login successful",
+		// "session_id": sessionID,
 	})
 }
 
@@ -427,7 +427,6 @@ func (h *FarmerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FarmerHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the admin from context
 	farmer, ok := r.Context().Value(middleware.FarmerContextKey).(*models.Farmer)
 	if !ok || farmer == nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -436,8 +435,7 @@ func (h *FarmerHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			"success": false,
 			"message": "Unauthorized: Farmer not found in context",
 		})
-		// http.Error(w, "Unauthorized: Farmer not found in context", http.StatusUnauthorized)
-		return
+		return // Removed http.Error
 	}
 
 	// Define a response struct to exclude sensitive information.
