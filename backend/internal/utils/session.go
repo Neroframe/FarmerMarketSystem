@@ -33,8 +33,8 @@ func CreateSession(w http.ResponseWriter, db *sql.DB, userID int, userType strin
 		// Production values
 		HttpOnly: true,
 		Secure:   true,
-		// SameSite: http.SameSiteStrictMode, // Prevents CSRF attacks
 		SameSite: http.SameSiteNoneMode, // Allows cross-site cookie
+		// SameSite: http.SameSiteStrictMode, // Prevents CSRF attacks
 	})
 
 	return sessionID, nil

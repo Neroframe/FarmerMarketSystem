@@ -360,6 +360,12 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the farmer's status is approved and active.
 	if farmer.Status != "approved" || !farmer.IsActive {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Account not active or pending approval",
+		})
 		http.Error(w, "Account not active or pending approval", http.StatusUnauthorized)
 		return
 	}
@@ -429,6 +435,12 @@ func (h *FarmerHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	// The Authenticate middleware should have attached the farmer data.
 	farmer, ok := r.Context().Value(middleware.FarmerContextKey).(*models.Farmer)
 	if !ok || farmer == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Unauthorized: Farmer not found in context",
+		})
 		http.Error(w, "Unauthorized: Farmer not found in context", http.StatusUnauthorized)
 		return
 	}

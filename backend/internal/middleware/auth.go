@@ -21,13 +21,13 @@ func Authenticate(db *sql.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionID, err := utils.GetSessionID(r)
 		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusFound)
+			// http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
 		userID, userType, err := utils.GetUserIDFromSession(db, sessionID)
 		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusFound)
+			// http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
