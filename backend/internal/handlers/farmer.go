@@ -378,9 +378,9 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "Login successful",
-		"session_id": sessionID, 
+		"success":    true,
+		"message":    "Login successful",
+		"session_id": sessionID,
 	})
 }
 
