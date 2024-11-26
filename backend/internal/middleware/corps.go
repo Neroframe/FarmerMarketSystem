@@ -49,6 +49,7 @@ func CORS(next http.Handler) http.Handler {
 			return
 		}
 
+		log.Println("CORS Middleware: success!")
 		next.ServeHTTP(w, r)
 	})
 }

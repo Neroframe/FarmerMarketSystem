@@ -366,7 +366,7 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 			"success": false,
 			"message": "Account not active or pending approval",
 		})
-		http.Error(w, "Account not active or pending approval", http.StatusUnauthorized)
+		// http.Error(w, "Account not active or pending approval", http.StatusUnauthorized)
 		return
 	}
 
@@ -377,6 +377,7 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	sessionID, err := utils.CreateSession(w, h.DB, farmer.ID, "farmer")
 	if err != nil {
+		log.Printf("Error creating session: %v", err)
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
 		return
 	}
@@ -426,13 +427,7 @@ func (h *FarmerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FarmerHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Retrieve the authenticated farmer from the request context.
-	// The Authenticate middleware should have attached the farmer data.
+	// Retrieve the admin from context
 	farmer, ok := r.Context().Value(middleware.FarmerContextKey).(*models.Farmer)
 	if !ok || farmer == nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -441,7 +436,7 @@ func (h *FarmerHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			"success": false,
 			"message": "Unauthorized: Farmer not found in context",
 		})
-		http.Error(w, "Unauthorized: Farmer not found in context", http.StatusUnauthorized)
+		// http.Error(w, "Unauthorized: Farmer not found in context", http.StatusUnauthorized)
 		return
 	}
 
