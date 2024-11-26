@@ -271,25 +271,85 @@ func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message": "Successfully logged out"}`))
 }
 
+// func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
+// 	log.Println("Handling /buyer/home request")
+
+// 	if r.Method != http.MethodGet {
+// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+// 		return
+// 	}
+
+// 	products, err := models.GetAllActiveProducts(h.DB) // TODO
+// 	if err != nil {
+// 		log.Printf("Error fetching products: %v", err)
+// 		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(http.StatusOK)
+// 	if err := json.NewEncoder(w).Encode(products); err != nil {
+// 		log.Printf("Error encoding products to JSON: %v", err)
+// 		http.Error(w, "Failed to encode products", http.StatusInternalServerError)
+// 	}
+// }
+
 func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handling /buyer/home request")
-
+	// Ensure the request method is GET
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	products, err := models.GetAllActiveProducts(h.DB) // TODO
+	// Parse query parameters
+	queryValues := r.URL.Query()
+	filters := make(map[string]string)
+
+	// Category filter
+	if category := queryValues.Get("category"); category != "" {
+		filters["category"] = category
+	}
+
+	// Search term
+	if search := queryValues.Get("search"); search != "" {
+		filters["search"] = search
+	}
+
+	// Sorting option
+	if sort := queryValues.Get("sort"); sort != "" {
+		filters["sort"] = sort
+	}
+
+	// Pagination parameters
+	limit := 20 // default limit
+	if l := queryValues.Get("limit"); l != "" {
+		if parsedLimit, err := strconv.Atoi(l); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	page := 1 // default page
+	if p := queryValues.Get("page"); p != "" {
+		if parsedPage, err := strconv.Atoi(p); err == nil && parsedPage > 0 {
+			page = parsedPage
+		}
+	}
+	offset := (page - 1) * limit
+
+	// Call the model function to get products
+	products, err := models.GetProductsWithFilters(h.DB, filters, limit, offset)
 	if err != nil {
-		log.Printf("Error fetching products: %v", err)
-		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to retrieve products", http.StatusInternalServerError)
 		return
 	}
 
+	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+
+	// Encode the products to JSON
 	if err := json.NewEncoder(w).Encode(products); err != nil {
-		log.Printf("Error encoding products to JSON: %v", err)
-		http.Error(w, "Failed to encode products", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error: Unable to encode products", http.StatusInternalServerError)
+		return
 	}
 }
