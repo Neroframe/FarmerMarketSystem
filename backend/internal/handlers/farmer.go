@@ -140,13 +140,15 @@ func (h *FarmerHandler) ApproveFarmer(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Email sent successfully")
 
-	// Create a notification 
+	// Create a notification for the farmer
 	notificationType := "account_approved"
 	notificationMessage := "Your farmer account has been approved. You can now access your dashboard."
 
-	err = models.CreateNotification(h.DB, "farmer", farmerID, notificationType, notificationMessage)
+	err = models.CreateNotification(h.DB, farmerID, notificationType, notificationMessage) // Pass the database connection instead of the transaction
 	if err != nil {
 		log.Printf("Error creating notification for farmer ID %d: %v", farmerID, err)
+		http.Error(w, "Internal Server Error: Failed to create notification", http.StatusInternalServerError)
+		return
 	}
 
 	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
@@ -206,17 +208,19 @@ func (h *FarmerHandler) RejectFarmer(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error sending rejection email to farmer ID %d (%s): %v", farmerID, email, err)
 		return
 	}
+	log.Printf("Farmer ID %d rejected for reason: %s", farmerID, reason)
 
-	// Save notification
+	// Create a notification for the farmer
 	notificationType := "account_rejected"
 	notificationMessage := fmt.Sprintf("Your farmer account has been rejected. Reason: %s", reason)
 
-	err = models.CreateNotification(h.DB, "farmer", farmerID, notificationType, notificationMessage)
+	err = models.CreateNotification(h.DB, farmerID, notificationType, notificationMessage) // Pass the database connection instead of the transaction
 	if err != nil {
 		log.Printf("Error creating notification for farmer ID %d: %v", farmerID, err)
+		http.Error(w, "Internal Server Error: Failed to create notification", http.StatusInternalServerError)
+		return
 	}
 
-	log.Printf("Farmer ID %d rejected for reason: %s", farmerID, reason)
 	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
 
