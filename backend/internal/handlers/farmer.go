@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -101,11 +102,39 @@ func (h *FarmerHandler) ApproveFarmer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update farmer status to 'approved' and set approved_at timestamp.
 	_, err = h.DB.Exec("UPDATE farmers SET status = $1, approved_at = $2, updated_at = $3 WHERE id = $4", "approved", time.Now(), time.Now(), farmerID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		log.Printf("Error updating farmer status: %v", err)
+		return
+	}
+
+	// Retrieve farmer's email and first name for the email
+	var email, firstName string
+	selectQuery := `
+			SELECT email, first_name 
+			FROM farmers 
+			WHERE id = $1
+		`
+	err = h.DB.QueryRow(selectQuery, farmerID).Scan(&email, &firstName)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("Error retrieving farmer details: %v", err)
+		return
+	}
+
+	// Compose the approval email
+	subject := "Your Farmer Account Has Been Approved"
+	body := fmt.Sprintf(
+		"Dear %s,\n\nCongratulations! Your farmer account has been approved. You can now access your dashboard and start managing your farm.\n\nBest regards,\nFarmers Market System Team",
+		firstName,
+	)
+
+	// Send the approval email
+	err = utils.SendEmail(email, subject, body)
+	if err != nil {
+		http.Error(w, "Internal Server Error: Failed to send email", http.StatusInternalServerError)
+		log.Printf("Error sending approval email: %v", err)
 		return
 	}
 
@@ -131,11 +160,39 @@ func (h *FarmerHandler) RejectFarmer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update farmer status to 'rejected' and set the rejection_reason.
 	_, err = h.DB.Exec("UPDATE farmers SET status = $1, rejection_reason = $2, updated_at = $3 WHERE id = $4", "rejected", reason, time.Now(), farmerID)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		log.Printf("Error updating farmer rejection status: %v", err)
+		return
+	}
+
+	// Retrieve farmer's email and first name for the email
+	var email, firstName string
+	selectQuery := `
+			SELECT email, first_name 
+			FROM farmers 
+			WHERE id = $1
+		`
+	err = h.DB.QueryRow(selectQuery, farmerID).Scan(&email, &firstName)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("Error retrieving farmer details: %v", err)
+		return
+	}
+
+	// Compose the rejection email
+	subject := "Your Farmer Account Has Been Rejected"
+	body := fmt.Sprintf(
+		"Dear %s,\n\nWe regret to inform you that your farmer account has been rejected for the following reason:\n\n%s\n\nIf you have any questions or need further assistance, please contact support.\n\nBest regards,\nFarmers Market System Team",
+		firstName, reason,
+	)
+
+	// Send the rejection email
+	err = utils.SendEmail(email, subject, body)
+	if err != nil {
+		http.Error(w, "Internal Server Error: Failed to send email", http.StatusInternalServerError)
+		log.Printf("Error sending rejection email to farmer ID %d (%s): %v", farmerID, email, err)
 		return
 	}
 
@@ -166,9 +223,7 @@ func (h *FarmerHandler) ToggleFarmerStatus(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Toggle the `is_active` status.
 	newIsActive := !farmer.IsActive
-
 	_, err = h.DB.Exec("UPDATE farmers SET is_active = $1, updated_at = $2 WHERE id = $3", newIsActive, time.Now(), farmer.ID)
 	if err != nil {
 		http.Error(w, "Failed to update farmer active status", http.StatusInternalServerError)
@@ -180,7 +235,7 @@ func (h *FarmerHandler) ToggleFarmerStatus(w http.ResponseWriter, r *http.Reques
 
 func (h *FarmerHandler) EditFarmer(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		// Retrieve farmer ID from query parameters.
+		// Retrieve farmer ID from query parameters
 		farmerID, err := strconv.Atoi(r.URL.Query().Get("id"))
 		if err != nil {
 			http.Error(w, "Invalid farmer ID", http.StatusBadRequest)
@@ -204,7 +259,7 @@ func (h *FarmerHandler) EditFarmer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		// Retrieve and parse farmer ID from form.
+		// Retrieve and parse farmer ID from form
 		farmerID, err := strconv.Atoi(r.FormValue("id"))
 		if err != nil {
 			http.Error(w, "Invalid farmer ID", http.StatusBadRequest)
@@ -220,10 +275,9 @@ func (h *FarmerHandler) EditFarmer(w http.ResponseWriter, r *http.Request) {
 			FarmSize:  r.FormValue("farm_size"),
 			Location:  r.FormValue("location"),
 			Status:    r.FormValue("status"),
-			IsActive:  r.FormValue("is_active") == "on", // Set to true if checkbox is checked
+			IsActive:  r.FormValue("is_active") == "on",
 		}
 
-		// Update the farmer in the database.
 		err = models.UpdateFarmer(h.DB, updatedFarmer)
 		if err != nil {
 			log.Printf("Error updating farmer: %v", err)
@@ -286,7 +340,12 @@ func (h *FarmerHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	existingFarmer, err := models.GetFarmerByEmail(h.DB, req.Email)
 	if err == nil && existingFarmer != nil {
-		http.Error(w, "Farmer with this email already exists", http.StatusConflict)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Farmer with this email already exists",
+		})
 		return
 	}
 
@@ -304,8 +363,8 @@ func (h *FarmerHandler) Register(w http.ResponseWriter, r *http.Request) {
 		FarmName:     req.FarmName,
 		FarmSize:     req.FarmSize,
 		Location:     req.Location,
-		Status:       "pending", // Initial status
-		IsActive:     false,     // Initial active status
+		Status:       "pending",
+		IsActive:     false,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -346,7 +405,12 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	farmer, err := models.GetFarmerByEmail(h.DB, req.Email)
 	if err != nil || farmer == nil {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Incorrect email or password",
+		})
 		return
 	}
 
