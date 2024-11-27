@@ -132,13 +132,14 @@ func (h *FarmerHandler) ApproveFarmer(w http.ResponseWriter, r *http.Request) {
 		firstName,
 	)
 
-	// Send the approval email
+	log.Printf("Preparing to send email to: %s with subject: %s", email, subject)
 	err = utils.SendEmail(email, subject, body)
 	if err != nil {
+		log.Printf("Error sending email: %v", err)
 		http.Error(w, "Internal Server Error: Failed to send email", http.StatusInternalServerError)
-		log.Printf("Error sending approval email: %v", err)
 		return
 	}
+	log.Println("Email sent successfully")
 
 	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
