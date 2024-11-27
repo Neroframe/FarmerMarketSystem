@@ -72,7 +72,6 @@ func main() {
 	http.Handle("/buyer/register", middleware.CORS(http.HandlerFunc(buyerHandler.Register)))
 	http.Handle("/buyer/login", middleware.CORS(http.HandlerFunc(buyerHandler.Login)))
 	http.Handle("/buyer/logout", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(buyerHandler.Logout))))
-	// home - search, categories
 	http.Handle("/buyer/home", middleware.CORS(http.HandlerFunc(buyerHandler.Home)))
 	http.Handle("/buyer/product/", middleware.CORS(http.HandlerFunc(productHandler.GetProductDetails)))
 
@@ -80,8 +79,6 @@ func main() {
 	http.Handle("/farmer/register", middleware.CORS(http.HandlerFunc(farmerHandler.Register)))
 	http.Handle("/farmer/login", middleware.CORS(http.HandlerFunc(farmerHandler.Login)))
 	http.Handle("/farmer/logout", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.Logout))))
-
-	// dashboard - list products, manage inventory, track sales
 	http.Handle("/farmer/dashboard", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.Dashboard))))
 	http.Handle("/farmer/product/add-product", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.AddProduct))))
 	http.Handle("/farmer/product/list-products", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(farmerHandler.ListProducts))))

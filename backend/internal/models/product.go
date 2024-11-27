@@ -420,7 +420,6 @@ func GetProductImages(db *sql.DB, productID int) ([]string, error) {
 	return images, nil
 }
 
-
 func GetFarmerLowStockProducts(db *sql.DB, farmerID int, threshold int) ([]Product, error) {
     rows, err := db.Query(`
         SELECT id, farmer_id, name, category_id, price, quantity, description, is_active, created_at, updated_at
@@ -428,7 +427,7 @@ func GetFarmerLowStockProducts(db *sql.DB, farmerID int, threshold int) ([]Produ
         WHERE farmer_id = $1 AND quantity <= $2 AND is_active = TRUE
     `, farmerID, threshold)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("GetFarmerLowStockProducts: error executing query: %w", err)
     }
     defer rows.Close()
 
@@ -449,12 +448,12 @@ func GetFarmerLowStockProducts(db *sql.DB, farmerID int, threshold int) ([]Produ
             &product.UpdatedAt,
         )
         if err != nil {
-            return nil, err
+            return nil, fmt.Errorf("GetFarmerLowStockProducts: error scanning row: %w", err)
         }
 
         images, err := GetProductImages(db, product.ID)
         if err != nil {
-            return nil, err
+            return nil, fmt.Errorf("GetFarmerLowStockProducts: error getting images: %w", err)
         }
         product.Images = images
 
@@ -462,7 +461,7 @@ func GetFarmerLowStockProducts(db *sql.DB, farmerID int, threshold int) ([]Produ
     }
 
     if err = rows.Err(); err != nil {
-        return nil, err
+        return nil, fmt.Errorf("GetFarmerLowStockProducts: rows error: %w", err)
     }
 
     return products, nil
