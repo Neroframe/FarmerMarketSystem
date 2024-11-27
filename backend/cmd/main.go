@@ -11,6 +11,7 @@ import (
 	"github.com/Neroframe/FarmerMarketSystem/backend/internal/db"
 	"github.com/Neroframe/FarmerMarketSystem/backend/internal/handlers"
 	"github.com/Neroframe/FarmerMarketSystem/backend/internal/middleware"
+	_ "github.com/lib/pq"
 )
 
 func main() {
