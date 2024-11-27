@@ -123,6 +123,8 @@ func (h *FarmerHandler) ApproveFarmer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("email %s; name %s", email, firstName)
+
 	// Compose the approval email
 	subject := "Your Farmer Account Has Been Approved"
 	body := fmt.Sprintf(

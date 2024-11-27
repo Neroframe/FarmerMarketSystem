@@ -8,10 +8,10 @@ Connect to railway servers.
 railway login
 ```
 
-Use docker cmd to run backend locally on your machine.
+Use docker cmd to run backend locally on your machine. You have to create your own cloud PostgreSQL DB or ask for mine.
 
 ```bash
-docker run -p 8080:8080 -e DATABASE_URL=postgresql://postgres:wYawdQHnSbjCasEfAuDDpBnibXsuaSRp@junction.proxy.rlwy.net:44638/railway farmermarket-system
+docker run -p 8080:8080 -e DATABASE_URL=postgresql://postgres:****/railway farmermarket-system
 ```
 
 ## Setup (Old)
