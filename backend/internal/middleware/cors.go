@@ -5,29 +5,6 @@ import (
 	"net/http"
 )
 
-// TO DO: deploy front and add to origin
-// var allowedOrigins = []string{
-// 	"https://your-frontend-domain.com",
-// 	"https://farmermarketsystem-production.up.railway.app",
-// }
-
-// func isOriginAllowed(origin string) bool {
-// 	if strings.HasPrefix(origin, "http://localhost:") {
-// 		return true
-// 	}
-
-// 	if strings.HasSuffix(origin, ".exp.direct") {
-// 		return true
-// 	}
-
-// 	for _, o := range allowedOrigins {
-// 		if o == origin {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")

@@ -46,7 +46,6 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		// Validate CSRF token
 		err := utils.ValidateCSRFToken(r)
 		if err != nil {
 			log.Printf("Invalid CSRF token: %v", err)
@@ -54,7 +53,6 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Parse form data
 		err = r.ParseForm()
 		if err != nil {
 			log.Printf("Error parsing form: %v", err)
@@ -66,7 +64,6 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 		confirmPassword := r.FormValue("confirm_password")
 
-		// Input validation
 		if email == "" || password == "" || confirmPassword == "" {
 			http.Error(w, "Email and Password are required", http.StatusBadRequest)
 			return
@@ -88,7 +85,6 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Hash the password
 		hashedPassword, err := utils.HashPassword(password)
 		if err != nil {
 			log.Printf("Error hashing password: %v", err)
@@ -96,7 +92,6 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Create the new admin
 		admin := &models.Admin{
 			Email:        email,
 			PasswordHash: hashedPassword,
@@ -180,7 +175,6 @@ func (h *AdminHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Delete the session cookie.
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
 		Value:    "",
@@ -201,12 +195,10 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare data to pass to the template
 	data := map[string]interface{}{
 		"Email": admin.Email,
 	}
 
-	// Fetch pending farmers
 	pendingFarmers, err := models.GetPendingFarmers(h.DB)
 	if err != nil {
 		log.Printf("Error fetching pending farmers: %v", err)
@@ -227,7 +219,6 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 	data["PendingFarmers"] = displayFarmers
 
-	// Render the dashboard template.
 	err = h.Templates["dashboard"].Execute(w, data)
 	if err != nil {
 		log.Printf("Error rendering dashboard template: %v", err)

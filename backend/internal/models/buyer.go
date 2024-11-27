@@ -32,7 +32,7 @@ func GetAllBuyers(db *sql.DB) ([]Buyer, error) {
 	var buyers []Buyer
 	for rows.Next() {
 		var buyer Buyer
-		var deliveryPreferencesJSON []byte // To scan JSONB data
+		var deliveryPreferencesJSON []byte // JSONB data 
 
 		err := rows.Scan(
 			&buyer.ID,
@@ -40,7 +40,7 @@ func GetAllBuyers(db *sql.DB) ([]Buyer, error) {
 			&buyer.FirstName,
 			&buyer.LastName,
 			&buyer.DeliveryAddress,
-			&deliveryPreferencesJSON, // Scan JSONB data as bytes
+			&deliveryPreferencesJSON,
 			&buyer.IsActive,
 			&buyer.CreatedAt,
 			&buyer.UpdatedAt,

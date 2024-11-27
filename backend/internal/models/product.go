@@ -320,7 +320,6 @@ func GetProductsWithFilters(db *sql.DB, filters map[string]string, limit, offset
 	params = append(params, limit, offset)
 	paramCounter += 2
 
-	// Execute the query
 	rows, err := db.Query(query, params...)
 	if err != nil {
 		return nil, err
@@ -391,7 +390,7 @@ func getCategoryIDByName(categoryName string) int {
 	case "seeds":
 		return 3
 	default:
-		return 0 // Or handle unknown categories appropriately
+		return 0 
 	}
 }
 
