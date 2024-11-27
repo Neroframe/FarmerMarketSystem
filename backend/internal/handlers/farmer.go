@@ -428,57 +428,63 @@ func (h *FarmerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *FarmerHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
-	farmer, ok := r.Context().Value(middleware.FarmerContextKey).(*models.Farmer)
-	if !ok || farmer == nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": false,
-			"message": "Unauthorized: Farmer not found in context",
-		})
-		return // Removed http.Error
-	}
+    farmer, ok := r.Context().Value(middleware.FarmerContextKey).(*models.Farmer)
+    if !ok || farmer == nil {
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusForbidden)
+        json.NewEncoder(w).Encode(map[string]interface{}{
+            "success": false,
+            "message": "Unauthorized: Farmer not found in context",
+        })
+        return
+    }
 
-	// Define a response struct to exclude sensitive information.
-	type FarmerResponse struct {
-		ID        int       `json:"id"`
-		Email     string    `json:"email"`
-		FirstName string    `json:"first_name"`
-		LastName  string    `json:"last_name"`
-		FarmName  string    `json:"farm_name"`
-		FarmSize  string    `json:"farm_size"`
-		Location  string    `json:"location"`
-		Status    string    `json:"status"`
-		IsActive  bool      `json:"is_active"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-	}
+    lowStockThreshold := 5 
+    lowStockProducts, err := models.GetFarmerLowStockProducts(h.DB, farmer.ID, lowStockThreshold)
+    if err != nil {
+        log.Printf("Error retrieving low-stock products: %v", err)
+        http.Error(w, "Failed to retrieve low-stock products", http.StatusInternalServerError)
+        return
+    }
 
-	// Populate the response struct with farmer data.
-	response := FarmerResponse{
-		ID:        farmer.ID,
-		Email:     farmer.Email,
-		FirstName: farmer.FirstName,
-		LastName:  farmer.LastName,
-		FarmName:  farmer.FarmName,
-		FarmSize:  farmer.FarmSize,
-		Location:  farmer.Location,
-		Status:    farmer.Status,
-		IsActive:  farmer.IsActive,
-		CreatedAt: farmer.CreatedAt,
-		UpdatedAt: farmer.UpdatedAt,
-	}
+    type FarmerResponse struct {
+        ID              int                  `json:"id"`
+        Email           string               `json:"email"`
+        FirstName       string               `json:"first_name"`
+        LastName        string               `json:"last_name"`
+        FarmName        string               `json:"farm_name"`
+        FarmSize        string               `json:"farm_size"`
+        Location        string               `json:"location"`
+        Status          string               `json:"status"`
+        IsActive        bool                 `json:"is_active"`
+        CreatedAt       time.Time            `json:"created_at"`
+        UpdatedAt       time.Time            `json:"updated_at"`
+        LowStockProducts []models.Product    `json:"low_stock_products"`
+    }
 
-	// Set response headers.
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+    response := FarmerResponse{
+        ID:               farmer.ID,
+        Email:            farmer.Email,
+        FirstName:        farmer.FirstName,
+        LastName:         farmer.LastName,
+        FarmName:         farmer.FarmName,
+        FarmSize:         farmer.FarmSize,
+        Location:         farmer.Location,
+        Status:           farmer.Status,
+        IsActive:         farmer.IsActive,
+        CreatedAt:        farmer.CreatedAt,
+        UpdatedAt:        farmer.UpdatedAt,
+        LowStockProducts: lowStockProducts,
+    }
 
-	// Encode and send the response.
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
-	}
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    if err := json.NewEncoder(w).Encode(response); err != nil {
+        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+        return
+    }
 }
+
 
 func (h *FarmerHandler) AddProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

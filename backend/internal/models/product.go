@@ -419,3 +419,51 @@ func GetProductImages(db *sql.DB, productID int) ([]string, error) {
 
 	return images, nil
 }
+
+
+func GetFarmerLowStockProducts(db *sql.DB, farmerID int, threshold int) ([]Product, error) {
+    rows, err := db.Query(`
+        SELECT id, farmer_id, name, category_id, price, quantity, description, is_active, created_at, updated_at
+        FROM products
+        WHERE farmer_id = $1 AND quantity <= $2 AND is_active = TRUE
+    `, farmerID, threshold)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var products []Product
+    for rows.Next() {
+        var product Product
+
+        err := rows.Scan(
+            &product.ID,
+            &product.FarmerID,
+            &product.Name,
+            &product.CategoryID,
+            &product.Price,
+            &product.Quantity,
+            &product.Description,
+            &product.IsActive,
+            &product.CreatedAt,
+            &product.UpdatedAt,
+        )
+        if err != nil {
+            return nil, err
+        }
+
+        images, err := GetProductImages(db, product.ID)
+        if err != nil {
+            return nil, err
+        }
+        product.Images = images
+
+        products = append(products, product)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return products, nil
+}
