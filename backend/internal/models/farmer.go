@@ -22,7 +22,7 @@ type Farmer struct {
 
 func GetPendingFarmers(db *sql.DB) ([]Farmer, error) {
 	rows, err := db.Query(`
-		SELECT id, email, first_name, last_name, farm_name, farm_size, location, status, created_at
+		SELECT id, email, first_name, last_name, farm_name, farm_size, location, status, is_active, created_at
 		FROM farmers
 		WHERE status = 'pending'
 	`)
@@ -43,6 +43,7 @@ func GetPendingFarmers(db *sql.DB) ([]Farmer, error) {
 			&farmer.FarmSize,
 			&farmer.Location,
 			&farmer.Status,
+			&farmer.IsActive,
 			&farmer.CreatedAt,
 		)
 		if err != nil {
