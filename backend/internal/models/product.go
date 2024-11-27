@@ -4,6 +4,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 )
@@ -397,14 +398,16 @@ func getCategoryIDByName(categoryName string) int {
 }
 
 func GetProductImages(db *sql.DB, productID int) ([]string, error) {
-	rows, err := db.Query(`
-		SELECT image_url
-		FROM product_images
-		WHERE product_id = ?
-		ORDER BY image_order ASC
-	`, productID)
+	log.Printf("GetProductImages: Fetching images for productID %d", productID)
+
+	query := `
+        SELECT image_url
+        FROM product_images
+        WHERE product_id = $1
+    `
+	rows, err := db.Query(query, productID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetProductImages: error executing query: %w", err)
 	}
 	defer rows.Close()
 
@@ -412,57 +415,61 @@ func GetProductImages(db *sql.DB, productID int) ([]string, error) {
 	for rows.Next() {
 		var img string
 		if err := rows.Scan(&img); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("GetProductImages: error scanning row: %w", err)
 		}
-		images = append(images, strings.TrimSpace(img))
+		images = append(images, img)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("GetProductImages: rows error: %w", err)
 	}
 
 	return images, nil
 }
 
 func GetFarmerLowStockProducts(db *sql.DB, farmerID int, threshold int) ([]Product, error) {
-    rows, err := db.Query(`
+	rows, err := db.Query(`
         SELECT id, farmer_id, name, category_id, price, quantity, description, is_active, created_at, updated_at
         FROM products
         WHERE farmer_id = $1 AND quantity <= $2 AND is_active = TRUE
     `, farmerID, threshold)
-    if err != nil {
-        return nil, fmt.Errorf("GetFarmerLowStockProducts: error executing query: %w", err)
-    }
-    defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("GetFarmerLowStockProducts: error executing query: %w", err)
+	}
+	defer rows.Close()
 
-    var products []Product
-    for rows.Next() {
-        var product Product
+	var products []Product
+	for rows.Next() {
+		var product Product
 
-        err := rows.Scan(
-            &product.ID,
-            &product.FarmerID,
-            &product.Name,
-            &product.CategoryID,
-            &product.Price,
-            &product.Quantity,
-            &product.Description,
-            &product.IsActive,
-            &product.CreatedAt,
-            &product.UpdatedAt,
-        )
-        if err != nil {
-            return nil, fmt.Errorf("GetFarmerLowStockProducts: error scanning row: %w", err)
-        }
+		err := rows.Scan(
+			&product.ID,
+			&product.FarmerID,
+			&product.Name,
+			&product.CategoryID,
+			&product.Price,
+			&product.Quantity,
+			&product.Description,
+			&product.IsActive,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("GetFarmerLowStockProducts: error scanning row: %w", err)
+		}
 
-        images, err := GetProductImages(db, product.ID)
-        if err != nil {
-            return nil, fmt.Errorf("GetFarmerLowStockProducts: error getting images: %w", err)
-        }
-        product.Images = images
+		images, err := GetProductImages(db, product.ID)
+		if err != nil {
+			return nil, fmt.Errorf("GetFarmerLowStockProducts: error getting images: %w", err)
+		}
+		product.Images = images
 
-        products = append(products, product)
-    }
+		products = append(products, product)
+	}
 
-    if err = rows.Err(); err != nil {
-        return nil, fmt.Errorf("GetFarmerLowStockProducts: rows error: %w", err)
-    }
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("GetFarmerLowStockProducts: rows error: %w", err)
+	}
 
-    return products, nil
+	return products, nil
 }
