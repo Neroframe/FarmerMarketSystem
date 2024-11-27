@@ -20,18 +20,17 @@ func SetCSRFToken(w http.ResponseWriter) (string, error) {
 		Name:     "csrf_token",
 		Value:    token,
 		Path:     "/",
-        HttpOnly: true,  // Prevents JavaScript access
 		Expires:  time.Now().Add(24 * time.Hour),
-        // Production values
-        Secure:   true,
-		// SameSite: http.SameSiteStrictMode,   // Prevents CSRF attacks
+		HttpOnly: true, // Prevents JavaScript access
+		Secure:   true,
 		SameSite: http.SameSiteNoneMode, // Allows cross-site cookie
+		// SameSite: http.SameSiteStrictMode,   // Prevents CSRF attacks
 	}
 	http.SetCookie(w, cookie)
 	return token, nil
 }
 
-// Compares the CSRF tokens (form and cookie)
+// Compares the CSRF tokens (form with cookie)
 func ValidateCSRFToken(r *http.Request) error {
 	formToken := r.FormValue("csrf_token")
 	if formToken == "" {

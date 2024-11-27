@@ -109,7 +109,7 @@ func (h *FarmerHandler) ApproveFarmer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
 
 func (h *FarmerHandler) RejectFarmer(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,7 @@ func (h *FarmerHandler) RejectFarmer(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Farmer ID %d rejected for reason: %s", farmerID, reason)
 
-	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
 
 func (h *FarmerHandler) ToggleFarmerStatus(w http.ResponseWriter, r *http.Request) {
@@ -248,7 +248,6 @@ func (h *FarmerHandler) DeleteFarmer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete farmer from the database.
 	_, err = h.DB.Exec("DELETE FROM farmers WHERE id = $1", farmerID)
 	if err != nil {
 		http.Error(w, "Failed to delete farmer", http.StatusInternalServerError)
@@ -265,7 +264,6 @@ func (h *FarmerHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Define a struct to parse the incoming JSON payload.
 	var req struct {
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
@@ -276,33 +274,28 @@ func (h *FarmerHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Location  string `json:"location"`
 	}
 
-	// Decode the JSON payload into the struct.
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 
-	// Validate that all required fields are present.
 	if req.FirstName == "" || req.LastName == "" || req.Email == "" || req.Password == "" || req.FarmName == "" || req.FarmSize == "" || req.Location == "" {
 		http.Error(w, "All fields are required", http.StatusBadRequest)
 		return
 	}
 
-	// Check if a farmer with the provided email already exists.
 	existingFarmer, err := models.GetFarmerByEmail(h.DB, req.Email)
 	if err == nil && existingFarmer != nil {
 		http.Error(w, "Farmer with this email already exists", http.StatusConflict)
 		return
 	}
 
-	// Hash the provided password using bcrypt.
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 		return
 	}
 
-	// Create a new Farmer object with the provided details.
 	newFarmer := &models.Farmer{
 		Email:        req.Email,
 		PasswordHash: hashedPassword,
@@ -317,13 +310,11 @@ func (h *FarmerHandler) Register(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:    time.Now(),
 	}
 
-	// Insert the new farmer into the database.
 	if err := models.CreateFarmer(h.DB, newFarmer); err != nil {
 		http.Error(w, "Failed to create farmer", http.StatusInternalServerError)
 		return
 	}
 
-	// Respond with a success message.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -359,7 +350,6 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if the farmer's status is approved and active.
 	if farmer.Status != "approved" || !farmer.IsActive {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
@@ -367,7 +357,6 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 			"success": false,
 			"message": "Account not active or pending approval",
 		})
-		// http.Error(w, "Account not active or pending approval", http.StatusUnauthorized)
 		return
 	}
 
@@ -388,7 +377,6 @@ func (h *FarmerHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success": true,
 		"message": "Login successful",
-		// "session_id": sessionID,
 	})
 }
 
@@ -398,14 +386,12 @@ func (h *FarmerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Retrieve the session ID from the request cookies.
 	sessionID, err := utils.GetSessionID(r)
 	if err != nil {
 		http.Error(w, "Session not found", http.StatusUnauthorized)
 		return
 	}
 
-	// Destroy the session in the database and clear the session cookie.
 	if err := utils.DestroySession(h.DB, sessionID); err != nil {
 		http.Error(w, "Failed to destroy session", http.StatusInternalServerError)
 		return

@@ -2,8 +2,5 @@
 .git
 .gitignore
 
-# Exclude node_modules (if any)
-node_modules
-
 # Exclude build artifacts
 /out

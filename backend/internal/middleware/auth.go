@@ -23,14 +23,12 @@ func Authenticate(db *sql.DB, next http.Handler) http.Handler {
 		sessionID, err := utils.GetSessionID(r)
 		if err != nil {
 			log.Println("Auth Middleware: couldn't retrieve sessionID")
-			// http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
 		userID, userType, err := utils.GetUserIDFromSession(db, sessionID)
 		if err != nil {
 			log.Println("Auth Middleware: couldn't retrieve userID")
-			// http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
@@ -66,11 +64,10 @@ func Authenticate(db *sql.DB, next http.Handler) http.Handler {
 
 		default:
 			log.Println("Auth Middleware: couldn't handle userType")
-			// http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 
-		log.Println("Auth Middleware: success!")
+		// log.Println("Auth Middleware: success!")
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})

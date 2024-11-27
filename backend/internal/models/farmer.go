@@ -51,7 +51,6 @@ func GetPendingFarmers(db *sql.DB) ([]Farmer, error) {
 		farmers = append(farmers, farmer)
 	}
 
-	// Check for any errors encountered during iteration
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}

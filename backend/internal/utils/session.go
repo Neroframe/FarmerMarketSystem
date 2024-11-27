@@ -30,7 +30,6 @@ func CreateSession(w http.ResponseWriter, db *sql.DB, userID int, userType strin
 		Value:   sessionID,
 		Expires: expiresAt,
 		Path:    "/",
-		// Production values
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteNoneMode, // Allows cross-site cookie
@@ -60,7 +59,7 @@ func GetUserIDFromSession(db *sql.DB, sessionID string) (int, string, error) {
 		return 0, "", errors.New("invalid session")
 	}
 
-	// Check and delete the expired session from the database
+	// Check and delete the expired session 
 	if time.Now().After(expiresAt) {
 		DestroySession(db, sessionID)
 		return 0, "", errors.New("session expired")

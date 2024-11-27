@@ -3,30 +3,30 @@ package middleware
 import (
 	"log"
 	"net/http"
-	"strings"
 )
 
-var allowedOrigins = []string{
-	"https://your-frontend-domain.com", // TO DO
-	"https://farmermarketsystem-production.up.railway.app",
-}
+// TO DO: deploy front and add to origin
+// var allowedOrigins = []string{
+// 	"https://your-frontend-domain.com",
+// 	"https://farmermarketsystem-production.up.railway.app",
+// }
 
-func isOriginAllowed(origin string) bool {
-	if strings.HasPrefix(origin, "http://localhost:") {
-		return true
-	}
+// func isOriginAllowed(origin string) bool {
+// 	if strings.HasPrefix(origin, "http://localhost:") {
+// 		return true
+// 	}
 
-	if strings.HasSuffix(origin, ".exp.direct") {
-		return true
-	}
+// 	if strings.HasSuffix(origin, ".exp.direct") {
+// 		return true
+// 	}
 
-	for _, o := range allowedOrigins {
-		if o == origin {
-			return true
-		}
-	}
-	return false
-}
+// 	for _, o := range allowedOrigins {
+// 		if o == origin {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

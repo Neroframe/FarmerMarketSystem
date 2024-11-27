@@ -11,8 +11,6 @@ import (
 	"github.com/Neroframe/FarmerMarketSystem/backend/internal/db"
 	"github.com/Neroframe/FarmerMarketSystem/backend/internal/handlers"
 	"github.com/Neroframe/FarmerMarketSystem/backend/internal/middleware"
-
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -32,7 +30,6 @@ func main() {
 	cwd, _ := os.Getwd()
 	log.Printf("Current working directory: %s\n", cwd)
 
-	// Use a relative path to the templates directory
 	templates, err := parseTemplates("web/templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
@@ -45,19 +42,18 @@ func main() {
 
 	http.Handle("/favicon.ico", http.HandlerFunc(http.NotFound))
 
+	// Admin routes
 	http.HandleFunc("/", adminHandler.Root)
-	http.HandleFunc("/register", adminHandler.Register)
-	http.HandleFunc("/login", adminHandler.Login)
-	http.Handle("/logout", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Logout)))
+	http.HandleFunc("/admin/register", adminHandler.Register)
+	http.HandleFunc("/admin/login", adminHandler.Login)
+	http.Handle("/admin/logout", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Logout)))
 
-	// Dashboard routes
-	http.Handle("/dashboard", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Dashboard)))
-	http.Handle("/dashboard/pending-farmers", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ListPendingFarmers))))
-	http.Handle("/dashboard/farmer-profile", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ViewFarmerProfile))))
-	http.Handle("/dashboard/approve-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ApproveFarmer))))
-	http.Handle("/dashboard/reject-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.RejectFarmer))))
+	http.Handle("/admin/dashboard", middleware.Authenticate(dbConn, http.HandlerFunc(adminHandler.Dashboard)))
+	http.Handle("/admin/dashboard/pending-farmers", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ListPendingFarmers))))
+	http.Handle("/admin/dashboard/farmer-profile", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ViewFarmerProfile))))
+	http.Handle("/admin/dashboard/approve-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ApproveFarmer))))
+	http.Handle("/admin/dashboard/reject-farmer", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.RejectFarmer))))
 
-	// User management routes
 	http.Handle("/admin/users", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(adminHandler.ListUsers))))
 
 	http.Handle("/admin/users/toggle-farmer-status", middleware.Authenticate(dbConn, middleware.AdminOnly(http.HandlerFunc(farmerHandler.ToggleFarmerStatus))))

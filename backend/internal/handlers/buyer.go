@@ -47,7 +47,7 @@ func (h *BuyerHandler) ToggleBuyerStatus(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Toggle the `is_active` status.
+	// Toggle the `is_active` status
 	newIsActive := !buyer.IsActive
 
 	_, err = h.DB.Exec("UPDATE buyers SET is_active = $1, updated_at = $2 WHERE id = $3", newIsActive, time.Now(), buyer.ID)
@@ -312,18 +312,14 @@ func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
 	}
 	offset := (page - 1) * limit
 
-	// Call the model function to get products
 	products, err := models.GetProductsWithFilters(h.DB, filters, limit, offset)
 	if err != nil {
 		http.Error(w, "Internal Server Error: Unable to retrieve products", http.StatusInternalServerError)
 		return
 	}
 
-	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
-	// Encode the products to JSON
 	if err := json.NewEncoder(w).Encode(products); err != nil {
 		http.Error(w, "Internal Server Error: Unable to encode products", http.StatusInternalServerError)
 		return

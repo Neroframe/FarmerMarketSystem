@@ -45,7 +45,6 @@ func (h *ProductHandler) GetProductDetails(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Fetch product details from the database
 	product, err := models.GetProductByID(h.DB, id)
 	if err != nil {
 		log.Printf("Error fetching product: %v", err)
@@ -53,7 +52,6 @@ func (h *ProductHandler) GetProductDetails(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Respond with the product details in JSON format
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(product); err != nil {

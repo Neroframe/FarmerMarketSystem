@@ -25,7 +25,7 @@ func NewAdminHandler(db *sql.DB, templates map[string]*template.Template) *Admin
 }
 
 func (h *AdminHandler) Root(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 }
 
 func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -110,8 +110,7 @@ func (h *AdminHandler) Register(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Redirect to login page after successful registration
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 	}
 }
 
@@ -161,7 +160,6 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Create a new session for the authenticated admin
 		_, err = utils.CreateSession(w, h.DB, admin.ID, "admin")
 		if err != nil {
 			log.Printf("Error creating session: %v", err)
@@ -169,7 +167,7 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 	}
 }
 
@@ -191,7 +189,7 @@ func (h *AdminHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	})
 
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 }
 
 func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -199,7 +197,7 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	admin, ok := r.Context().Value(middleware.AdminContextKey).(*models.Admin)
 	if !ok {
 		log.Println("Admin not found in context. Redirecting to login.")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 		return
 	}
 

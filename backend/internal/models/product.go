@@ -1,10 +1,8 @@
-// models/product.go
 package models
 
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 )
@@ -398,8 +396,7 @@ func getCategoryIDByName(categoryName string) int {
 }
 
 func GetProductImages(db *sql.DB, productID int) ([]string, error) {
-	log.Printf("GetProductImages: Fetching images for productID %d", productID)
-
+	// log.Printf("GetProductImages: Fetching images for productID %d", productID)
 	query := `
         SELECT image_url
         FROM product_images

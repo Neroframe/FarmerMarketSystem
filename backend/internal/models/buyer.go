@@ -122,7 +122,7 @@ func GetBuyerByEmail(db *sql.DB, email string) (*Buyer, error) {
 		Scan(
 			&buyer.ID,
 			&buyer.Email,
-			&buyer.PasswordHash, // Include password hash
+			&buyer.PasswordHash,
 			&buyer.FirstName,
 			&buyer.LastName,
 			&buyer.DeliveryAddress,
