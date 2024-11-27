@@ -8,7 +8,7 @@ import (
 
 func SendEmail(to string, subject string, body string) error {
 	mailer := gomail.NewMessage()
-	mailer.SetHeader("From", "no-reply@mailtrap.io")
+	mailer.SetHeader("From", "no-reply@demomailtrap.com")
 	mailer.SetHeader("To", to)
 	mailer.SetHeader("Subject", subject)
 	mailer.SetBody("text/plain", body)
