@@ -65,10 +65,6 @@
             <td>{{.Location}}</td>
             <td>
               <a href="/admin/dashboard/farmer-profile?id={{.ID}}">View Profile</a>
-              <form action="/admin/users/toggle-buyer-status" method="post" style="display: inline;">
-                <input type="hidden" name="id" value="{{.ID}}">
-                <button type="submit">{{if .IsActive}}Disable{{else}}Enable{{end}}</button>
-              </form>
             </td>
           </tr>
           {{end}}

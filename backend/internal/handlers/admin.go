@@ -214,7 +214,6 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			"Email":    farmer.Email,
 			"FarmSize": farmer.FarmSize,
 			"Location": farmer.Location,
-			"IsActive": farmer.IsActive,
 		}
 		displayFarmers = append(displayFarmers, displayFarmer)
 	}
