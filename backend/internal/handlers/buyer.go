@@ -253,7 +253,7 @@ func (h *BuyerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = utils.CreateSession(w, h.DB, buyer.ID, "farmer")
+	_, err = utils.CreateSession(w, h.DB, buyer.ID, "buyer")
 	if err != nil {
 		log.Printf("Error creating session: %v", err)
 		http.Error(w, "Failed to create session", http.StatusInternalServerError)
