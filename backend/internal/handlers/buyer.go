@@ -281,7 +281,7 @@ func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
-	buyer, ok := r.Context().Value(middleware.BuyerContextKey).(*models.Farmer)
+	buyer, ok := r.Context().Value(middleware.BuyerContextKey).(*models.Buyer)
 	if !ok || buyer == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
