@@ -40,6 +40,7 @@ func main() {
 	farmerHandler := handlers.NewFarmerHandler(dbConn, templates)
 	buyerHandler := handlers.NewBuyerHandler(dbConn, templates)
 	productHandler := handlers.NewProductHandler(dbConn, templates)
+	cartHandler := handlers.NewCartHandler(dbConn)
 
 	http.Handle("/favicon.ico", http.HandlerFunc(http.NotFound))
 
@@ -69,8 +70,14 @@ func main() {
 	http.Handle("/buyer/register", middleware.CORS(http.HandlerFunc(buyerHandler.Register)))
 	http.Handle("/buyer/login", middleware.CORS(http.HandlerFunc(buyerHandler.Login)))
 	http.Handle("/buyer/logout", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(buyerHandler.Logout))))
-	http.Handle("/buyer/home", middleware.CORS(http.HandlerFunc(buyerHandler.Home)))
+	http.Handle("/buyer/home", middleware.CORS(middleware.Authenticate(dbConn,http.HandlerFunc(buyerHandler.Home))))
 	http.Handle("/buyer/product/", middleware.CORS(http.HandlerFunc(productHandler.GetProductDetails)))
+
+	http.Handle("/cart", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(cartHandler.GetCart))))
+	http.Handle("/cart/add", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(cartHandler.AddToCart))))
+	http.Handle("/cart/remove/", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(cartHandler.RemoveFromCart))))
+	http.Handle("/cart/update", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(cartHandler.UpdateCart))))
+
 
 	// Farmer Routes
 	http.Handle("/farmer/register", middleware.CORS(http.HandlerFunc(farmerHandler.Register)))

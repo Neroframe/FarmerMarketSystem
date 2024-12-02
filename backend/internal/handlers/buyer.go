@@ -3,13 +3,15 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/Neroframe/FarmerMarketSystem/backend/internal/models"
-	"github.com/Neroframe/FarmerMarketSystem/backend/internal/utils"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/middleware"
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/models"
+	"github.com/Neroframe/FarmerMarketSystem/backend/internal/utils"
 )
 
 type BuyerHandler struct {
@@ -272,8 +274,14 @@ func (h *BuyerHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BuyerHandler) Home(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	buyer, ok := r.Context().Value(middleware.BuyerContextKey).(*models.Farmer)
+	if !ok || buyer == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Unauthorized: Buyer not found in context",
+		})
 		return
 	}
 
