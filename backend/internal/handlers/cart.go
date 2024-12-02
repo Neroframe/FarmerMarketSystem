@@ -19,7 +19,6 @@ type CartHandler struct {
 func NewCartHandler(db *sql.DB) *CartHandler {
 	return &CartHandler{DB: db}
 }
-
 // GetCart handles GET /cart
 func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 	// Retrieve buyer from context

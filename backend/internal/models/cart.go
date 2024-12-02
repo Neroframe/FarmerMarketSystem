@@ -4,7 +4,8 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"strings"
+
+	"github.com/lib/pq"
 )
 
 // CartItem represents an individual item in the cart
@@ -27,11 +28,13 @@ func GetCartByBuyerID(db *sql.DB, buyerID int) ([]CartItem, error) {
 			p.is_active, 
 			p.created_at, 
 			p.updated_at, 
-			p.images, 
+			COALESCE(array_agg(pi.image_url) FILTER (WHERE pi.image_url IS NOT NULL), ARRAY[]::VARCHAR[]) AS images,
 			ci.quantity
 		FROM cart_items ci
 		JOIN products p ON ci.product_id = p.id
+		LEFT JOIN product_images pi ON p.id = pi.product_id
 		WHERE ci.buyer_id = $1
+		GROUP BY p.id, p.farmer_id, p.name, p.category_id, p.price, p.quantity, p.description, p.is_active, p.created_at, p.updated_at, ci.quantity
 	`
 
 	rows, err := db.Query(query, buyerID)
@@ -43,7 +46,7 @@ func GetCartByBuyerID(db *sql.DB, buyerID int) ([]CartItem, error) {
 	var cartItems []CartItem
 	for rows.Next() {
 		var product Product
-		var images string
+		var images pq.StringArray
 		var quantity int
 
 		err := rows.Scan(
@@ -64,7 +67,7 @@ func GetCartByBuyerID(db *sql.DB, buyerID int) ([]CartItem, error) {
 			return nil, err
 		}
 
-		product.Images = parseImages(images)
+		product.Images = images
 		cartItem := CartItem{
 			Product:  product,
 			Quantity: quantity,
@@ -171,16 +174,4 @@ func UpdateCartItem(db *sql.DB, buyerID, productID, quantity int) error {
 	}
 
 	return nil
-}
-
-// Helper function to parse images from the database
-func parseImages(images string) []string {
-	if images == "" {
-		return []string{}
-	}
-	parts := strings.Split(images, ",")
-	for i, img := range parts {
-		parts[i] = strings.TrimSpace(img)
-	}
-	return parts
 }
