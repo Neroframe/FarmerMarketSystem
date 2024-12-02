@@ -253,10 +253,17 @@ func (h *BuyerHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Respond with token
+	_, err = utils.CreateSession(w, h.DB, buyer.ID, "farmer")
+	if err != nil {
+		log.Printf("Error creating session: %v", err)
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
 		"message": "Login successful",
 	})
 }
