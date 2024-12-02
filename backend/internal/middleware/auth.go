@@ -26,6 +26,7 @@ func Authenticate(db *sql.DB, next http.Handler) http.Handler {
 			return
 		}
 
+		log.Println(sessionID)
 		userID, userType, err := utils.GetUserIDFromSession(db, sessionID)
 		if err != nil {
 			log.Println("Auth Middleware: couldn't retrieve userID")
