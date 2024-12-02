@@ -78,6 +78,7 @@ func main() {
 	http.Handle("/cart/remove/", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(cartHandler.RemoveFromCart))))
 	http.Handle("/cart/update", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(cartHandler.UpdateCart))))
 
+	http.Handle("/checkout", middleware.CORS(middleware.Authenticate(dbConn, http.HandlerFunc(cartHandler.Checkout))))
 
 	// Farmer Routes
 	http.Handle("/farmer/register", middleware.CORS(http.HandlerFunc(farmerHandler.Register)))

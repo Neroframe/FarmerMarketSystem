@@ -19,6 +19,7 @@ type CartHandler struct {
 func NewCartHandler(db *sql.DB) *CartHandler {
 	return &CartHandler{DB: db}
 }
+
 // GetCart handles GET /cart
 func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 	// Retrieve buyer from context
@@ -193,6 +194,43 @@ func (h *CartHandler) UpdateCart(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"success": true,
 		"message": "Cart updated successfully",
+	}
+
+	// Send the response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *CartHandler) Checkout(w http.ResponseWriter, r *http.Request) {
+	// Retrieve buyer from context
+	buyer, ok := r.Context().Value(middleware.BuyerContextKey).(*models.Buyer)
+	if !ok || buyer == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Unauthorized: Buyer not found in context",
+		})
+		return
+	}
+
+	// Perform checkout
+	err := models.Checkout(h.DB, buyer.ID)
+	if err != nil {
+		// Log the error for backend debugging
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Prepare the response
+	response := map[string]interface{}{
+		"success": true,
+		"message": "Checkout completed successfully",
 	}
 
 	// Send the response

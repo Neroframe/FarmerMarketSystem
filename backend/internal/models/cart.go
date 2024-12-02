@@ -4,6 +4,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"strconv"
 
 	"github.com/lib/pq"
 )
@@ -171,6 +172,98 @@ func UpdateCartItem(db *sql.DB, buyerID, productID, quantity int) error {
 	}
 	if rowsAffected == 0 {
 		return errors.New("product not found in cart")
+	}
+
+	return nil
+}
+
+func Checkout(db *sql.DB, buyerID int) error {
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Lock the cart items for update
+	queryCart := `
+        SELECT ci.product_id, ci.quantity
+        FROM cart_items ci
+        WHERE ci.buyer_id = $1
+        FOR UPDATE
+    `
+	rows, err := tx.Query(queryCart, buyerID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	type CartProduct struct {
+		ProductID int
+		Quantity  int
+	}
+
+	var cartProducts []CartProduct
+	for rows.Next() {
+		var cp CartProduct
+		if err := rows.Scan(&cp.ProductID, &cp.Quantity); err != nil {
+			return err
+		}
+		cartProducts = append(cartProducts, cp)
+	}
+
+	if err = rows.Err(); err != nil {
+		return err
+	}
+
+	if len(cartProducts) == 0 {
+		return errors.New("cart is empty")
+	}
+
+	// Process each cart item
+	for _, cp := range cartProducts {
+		// Check product availability
+		var availableQuantity int
+		checkProductQuery := `
+            SELECT quantity
+            FROM products
+            WHERE id = $1
+            FOR UPDATE
+        `
+		err := tx.QueryRow(checkProductQuery, cp.ProductID).Scan(&availableQuantity)
+		if err != nil {
+			return err
+		}
+
+		if availableQuantity < cp.Quantity {
+			return errors.New("insufficient quantity for product ID " + strconv.Itoa(cp.ProductID))
+		}
+
+		// Deduct the quantity from the product
+		updateProductQuery := `
+            UPDATE products
+            SET quantity = quantity - $1
+            WHERE id = $2
+        `
+		_, err = tx.Exec(updateProductQuery, cp.Quantity, cp.ProductID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Clear the cart
+	clearCartQuery := `
+        DELETE FROM cart_items
+        WHERE buyer_id = $1
+    `
+	_, err = tx.Exec(clearCartQuery, buyerID)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return err
 	}
 
 	return nil
