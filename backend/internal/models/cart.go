@@ -1,3 +1,4 @@
+// models/cart.go
 package models
 
 import (
@@ -93,8 +94,8 @@ func AddProductToCart(db *sql.DB, buyerID, productID, quantity int) error {
 
 	// Check if the product is already in the cart
 	var existingQuantity int
-	query := `SELECT quantity FROM cart_items WHERE buyer_id = $1 AND product_id = $2`
-	err = tx.QueryRow(query, buyerID, productID).Scan(&existingQuantity)
+	checkQuery := `SELECT quantity FROM cart_items WHERE buyer_id = $1 AND product_id = $2`
+	err = tx.QueryRow(checkQuery, buyerID, productID).Scan(&existingQuantity)
 
 	if err != nil && err != sql.ErrNoRows {
 		return err

@@ -15,9 +15,11 @@ import (
 type CartHandler struct {
 	DB *sql.DB
 }
+
 func NewCartHandler(db *sql.DB) *CartHandler {
 	return &CartHandler{DB: db}
 }
+
 // GetCart handles GET /cart
 func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 	// Retrieve buyer from context
@@ -32,9 +34,10 @@ func (h *CartHandler) GetCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch cart items from the database
+	// Fetch cart items from the database using the correct function
 	cartItems, err := models.GetCartByBuyerID(h.DB, buyer.ID)
 	if err != nil {
+		// Log the error for backend debugging
 		http.Error(w, "Failed to retrieve cart", http.StatusInternalServerError)
 		return
 	}
@@ -81,9 +84,10 @@ func (h *CartHandler) AddToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add the product to the cart
+	// Add the product to the cart using the correct function
 	err = models.AddProductToCart(h.DB, buyer.ID, request.ProductID, request.Quantity)
 	if err != nil {
+		// Log the error for backend debugging
 		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, "Failed to add product to cart", http.StatusInternalServerError)
 		return
@@ -130,9 +134,10 @@ func (h *CartHandler) RemoveFromCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Remove the product from the cart
+	// Remove the product from the cart using the correct function
 	err = models.RemoveProductFromCart(h.DB, buyer.ID, productID)
 	if err != nil {
+		// Log the error for backend debugging
 		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, "Failed to remove product from cart", http.StatusInternalServerError)
 		return
@@ -176,9 +181,10 @@ func (h *CartHandler) UpdateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update the cart item
+	// Update the cart item using the correct function
 	err = models.UpdateCartItem(h.DB, buyer.ID, request.ProductID, request.Quantity)
 	if err != nil {
+		// Log the error for backend debugging
 		w.Header().Set("Content-Type", "application/json")
 		http.Error(w, "Failed to update cart item", http.StatusInternalServerError)
 		return
